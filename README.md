@@ -80,6 +80,27 @@ sudo ./scripts/setup-native-mongodb-debian12.sh /home/OmbreCore
 ./scripts/redeploy-native.sh /home/OmbreCore
 ```
 
+## Portail Recrutement Web
+
+Le bot embarque maintenant un portail web de recrutement avec connexion Discord.
+
+Variables a renseigner :
+
+```env
+CLIENT_SECRET=
+WEB_BASE_URL=https://societa.univers-bot.fr
+WEB_PORT=3000
+SESSION_SECRET=
+```
+
+Flux :
+
+- l'utilisateur ouvre `https://societa.univers-bot.fr/recruitment`
+- il se connecte via Discord
+- il remplit le formulaire complet
+- OmbraCore cree automatiquement un ticket recrutement
+- toutes les reponses sont injectees dans le ticket et dans le salon staff
+
 ## Variables d'environnement
 
 ```env

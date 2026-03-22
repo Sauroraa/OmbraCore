@@ -3,6 +3,7 @@ const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js"
 const { loadCommands } = require("./loaders/commandLoader");
 const { loadEvents } = require("./loaders/eventLoader");
 const { connectDatabase } = require("./services/database");
+const { startWebServer } = require("./services/webServer");
 const { loadRuntimeConfig } = require("./services/runtimeConfig");
 const { createLogger } = require("./utils/logger");
 
@@ -11,7 +12,7 @@ require("dotenv").config();
 const logger = createLogger("Bootstrap");
 
 function validateEnvironment() {
-  const requiredKeys = ["DISCORD_TOKEN", "CLIENT_ID", "GUILD_ID", "MONGODB_URI"];
+  const requiredKeys = ["DISCORD_TOKEN", "CLIENT_ID", "CLIENT_SECRET", "GUILD_ID", "MONGODB_URI", "SESSION_SECRET"];
   const missing = requiredKeys.filter((key) => !process.env[key]);
 
   if (missing.length) {
@@ -50,6 +51,7 @@ async function bootstrap() {
 
   loadCommands(client);
   loadEvents(client);
+  await startWebServer(client);
 
   await client.login(process.env.DISCORD_TOKEN);
 }
