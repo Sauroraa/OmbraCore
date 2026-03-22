@@ -48,7 +48,8 @@ async function loadRuntimeConfig() {
     roles: mergeDefaults(config.roles?.toObject?.() || config.roles, defaultGuildConfig.roles),
     automod: mergeDefaults(config.automod?.toObject?.() || config.automod, defaultGuildConfig.automod),
     recruitment: mergeDefaults(config.recruitment?.toObject?.() || config.recruitment, defaultGuildConfig.recruitment),
-    tickets: mergeDefaults(config.tickets?.toObject?.() || config.tickets, defaultGuildConfig.tickets)
+    tickets: mergeDefaults(config.tickets?.toObject?.() || config.tickets, defaultGuildConfig.tickets),
+    reactions: mergeDefaults(config.reactions?.toObject?.() || config.reactions, defaultGuildConfig.reactions)
   };
 
   Object.assign(config, mergedConfig);

@@ -35,10 +35,11 @@ async function bootstrap() {
       GatewayIntentBits.Guilds,
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.GuildMessageReactions,
       GatewayIntentBits.GuildModeration,
       GatewayIntentBits.MessageContent
     ],
-    partials: [Partials.Channel, Partials.Message]
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User]
   });
 
   client.commands = new Collection();

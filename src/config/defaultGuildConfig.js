@@ -39,6 +39,7 @@ module.exports = {
   roles: {
     unverified: "",
     member: "",
+    rulesReactionRole: "1485315803350827118",
     candidate: "",
     partner: "",
     guest: "",
@@ -108,5 +109,9 @@ module.exports = {
       }
     },
     closeArchiveCategoryId: ""
+  },
+  reactions: {
+    rulesMessageId: "1485325130598060132",
+    rulesRoleId: "1485315803350827118"
   }
 };

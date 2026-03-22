@@ -38,6 +38,10 @@ const guildConfigSchema = new mongoose.Schema(
     tickets: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
+    },
+    reactions: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
     }
   },
   {
