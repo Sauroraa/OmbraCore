@@ -8,17 +8,21 @@ function createWelcomeEmbed(member, config) {
     config.messages?.welcomeDescription ||
     "Bienvenue {user}\nAvant d'acceder au serveur, prends connaissance du reglement et valide-le pour rejoindre officiellement la communaute.";
   const description = descriptionTemplate.replace("{user}", `${member}`);
+  const rulesChannelMention = config.channels?.rules ? `<#${config.channels.rules}>` : "le salon reglement";
+  const ambientLine =
+    config.messages?.welcomeAmbientLine || "Une arrivee propre, un cadre serieux, une structure sous controle.";
 
   return createBaseEmbed({
     title,
     description,
     fields: [
-      { name: "Etape 1", value: "Lire le reglement", inline: true },
+      { name: "Etape 1", value: `Lire ${rulesChannelMention}`, inline: true },
       { name: "Etape 2", value: "Cliquer sur accepter", inline: true },
       { name: "Etape 3", value: "Acceder aux salons", inline: true },
+      { name: "Ambiance", value: ambientLine, inline: false },
       { name: "Membres", value: `${member.guild.memberCount}`, inline: true }
     ],
-    color: 0x202020
+    color: 0x141414
   }).setFooter({ text: config.brand?.footer || "OmbraCore • Societa Ombra" });
 }
 

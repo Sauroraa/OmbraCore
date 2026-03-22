@@ -7,6 +7,7 @@ module.exports = {
     welcomeTitle: "Bienvenue au sein de Societa Ombra",
     welcomeDescription:
       "Bienvenue {user}\nAvant d'acceder au serveur, prends connaissance du reglement et valide-le pour rejoindre officiellement la communaute.",
+    welcomeAmbientLine: "Une arrivee propre, un cadre serieux, une structure sous controle.",
     welcomeDmEnabled: false,
     rulesTitle: "Reglement de Societa Ombra",
     rulesDescription:
@@ -15,7 +16,7 @@ module.exports = {
       "Le non-respect du reglement peut entrainer un avertissement, un mute ou un bannissement."
   },
   channels: {
-    welcome: "",
+    welcome: "1485310617735663817",
     rules: "",
     validation: "",
     ticketPanel: "1485333822210834452",
