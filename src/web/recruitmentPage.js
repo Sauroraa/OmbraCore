@@ -27,7 +27,7 @@ function renderRecruitmentPage({
     .hero{padding:32px;border-radius:24px;background:linear-gradient(135deg,#151515,#121212);border:1px solid var(--line);box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1.2fr) 360px;gap:24px}.hero h2{margin:0;font-size:2.8rem;line-height:1.05}.hero p{margin:16px 0 0;color:var(--muted);max-width:680px;line-height:1.7}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.hero-card{padding:20px;border-radius:20px;background:#101010;border:1px solid #232323;display:grid;gap:16px}.hero-card h3{margin:0;font-size:1.05rem}.hero-card p{margin:0;color:var(--muted);line-height:1.7}.grid{display:grid;gap:16px}.grid.cards{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:20px}.card,.panel,.status-band{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.card{padding:18px}.card small{display:block;color:var(--muted);font-size:.8rem;margin-bottom:8px}.card strong{font-size:1.25rem}.panel{padding:20px}.panel h3{margin:0 0 8px;font-size:1.1rem}.panel p{margin:0;color:var(--muted);line-height:1.7}
     .dashboard-grid{display:grid;gap:16px;grid-template-columns:repeat(4,minmax(0,1fr))}.status-band{padding:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.tone-success{background:linear-gradient(180deg,#162118,#151515)}.tone-danger{background:linear-gradient(180deg,#251616,#151515)}.tone-warning{background:linear-gradient(180deg,#262114,#151515)}.progress{height:10px;border-radius:999px;background:#101010;border:1px solid #222;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#e3bf85)}.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.meta{padding:14px;border-radius:14px;background:#111;border:1px solid #222}.meta small{display:block;color:var(--muted);margin-bottom:6px}.meta strong{font-size:.95rem}
     .form-wrap{display:grid;gap:16px}.section{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}.section-head{padding:18px 20px;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.section-head h3{margin:0;font-size:1rem}.section-head p{margin:6px 0 0;color:var(--muted);font-size:.9rem;line-height:1.6}.section-index{min-width:56px;height:56px;border-radius:14px;background:#101010;border:1px solid #262626;display:grid;place-items:center;color:var(--gold);font-weight:800}.section-body{padding:20px}.fields-2,.fields-3,.fields-quiz{display:grid;gap:16px}.fields-2{grid-template-columns:repeat(2,minmax(0,1fr))}.fields-3{grid-template-columns:repeat(3,minmax(0,1fr))}.fields-quiz{grid-template-columns:1fr}.field.full{grid-column:1/-1}.field label{display:block;font-size:.88rem;font-weight:700;margin-bottom:8px}.field input,.field textarea,.field select{width:100%;padding:14px 15px;border-radius:12px;border:1px solid #2a2a2a;background:#101010;color:var(--text);outline:none;transition:.18s}.field input:focus,.field textarea:focus,.field select:focus{border-color:rgba(201,161,93,.6);box-shadow:0 0 0 3px rgba(201,161,93,.12)}.field textarea{min-height:140px;resize:vertical}.quiz-note{padding:14px 16px;border-radius:14px;background:#121212;border:1px solid var(--line2);color:var(--muted);line-height:1.7}.footer-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px;border-radius:18px;background:var(--panel);border:1px solid var(--line)}.footer-actions p{margin:0;color:var(--muted);max-width:760px;line-height:1.7}.answers-list{display:grid;gap:10px;margin-top:18px}.answer-item{padding:14px;border-radius:14px;background:#111;border:1px solid #222}.answer-item strong{display:block;font-size:.92rem;margin-bottom:6px}.answer-item span{display:block;color:var(--muted);line-height:1.65;white-space:pre-wrap}
-    .admin-list{display:grid;gap:16px}.admin-card{padding:18px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}.admin-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.admin-head h3{margin:0;font-size:1rem}.admin-head p{margin:6px 0 0;color:var(--muted)}.admin-stack{display:grid;gap:14px;margin-top:16px}.admin-form{display:grid;gap:12px;padding:14px;border-radius:14px;background:#111;border:1px solid #222}.admin-form h4{margin:0;font-size:.92rem}.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .admin-list{display:grid;gap:16px}.admin-card{padding:18px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}.admin-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.admin-head h3{margin:0;font-size:1rem}.admin-head p{margin:6px 0 0;color:var(--muted)}.admin-stack{display:grid;gap:14px;margin-top:16px}.admin-form{display:grid;gap:12px;padding:14px;border-radius:14px;background:#111;border:1px solid #222}.admin-form h4{margin:0;font-size:.92rem}.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.detail-grid{display:grid;gap:16px;grid-template-columns:minmax(0,1.2fr) 380px}.detail-actions{display:grid;gap:14px}.answer-section{display:grid;gap:12px}.answer-section .panel h4{margin:0 0 10px;font-size:1rem}.link-inline{color:var(--gold);font-weight:700}
     @media(max-width:1180px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--line)}.dashboard-grid,.grid.cards,.meta-grid,.admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.fields-2,.fields-3{grid-template-columns:1fr}}
     @media(max-width:720px){.main,.sidebar{padding:16px}.dashboard-grid,.grid.cards,.meta-grid,.admin-grid{grid-template-columns:1fr}.topbar,.hero-actions,.top-actions,.footer-actions{flex-direction:column;align-items:stretch}.btn{width:100%}}
   </style>
@@ -74,6 +74,7 @@ function renderRecruitmentPage({
       useEffect(() => { localStorage.setItem(draftStorageKey, JSON.stringify(draft)); }, [draft]);
       const app = state.portal?.latestApplication || null;
       const ticket = state.portal?.latestRecruitmentTicket || null;
+      const selectedApplication = state.portal?.selectedApplication || null;
       const safeAnswers = Array.isArray(app?.answers) ? app.answers : [];
       const safeStatusLabel = app?.status?.label || 'Transmis';
       const safeQuizScore = Number.isFinite(app?.quizScore) ? app.quizScore : 0;
@@ -81,6 +82,7 @@ function renderRecruitmentPage({
       const recruitmentLocked = Boolean(state.portal?.recruitmentLocked);
       const lockReason = state.portal?.lockReason || '';
       const canStartFresh = Boolean(app && app.status?.key === 'auto_refused' && !app.locked);
+      const adminDetailUrl = selectedApplication ? adminUrl + '/recruitment/' + selectedApplication.id : null;
       const progress = useMemo(() => {
         const allFields = [...sections.flatMap((section) => section.fields), ...quizSections.flatMap((section) => section.fields)];
         const total = allFields.length;
@@ -279,6 +281,9 @@ function renderRecruitmentPage({
                 <div className='meta'><small>Entretien</small><strong>{item.interviewScheduledFor ? formatDate(item.interviewScheduledFor) : 'Non fixé'}</strong></div>
               </div>
               {item.notes ? <div className='alert info' style={{marginTop:'16px'}}>{item.notes}</div> : null}
+              <div className='top-actions' style={{marginTop:'16px'}}>
+                <a className='btn' href={adminUrl + '/recruitment/' + item.id}>Consulter le dossier complet</a>
+              </div>
               <div className='admin-stack'>
                 <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/status'}>
                   <h4>Décision staff</h4>
@@ -351,6 +356,68 @@ function renderRecruitmentPage({
               <h3>Aucune candidature</h3>
               <p>Aucun dossier n’est actuellement remonté dans la gestion web.</p>
             </div>
+          ) : null}
+        </div>
+      );
+
+      const AdminDetailView = () => (
+        <div className='grid'>
+          {!selectedApplication ? <div className='alert error'>Dossier introuvable.</div> : null}
+          {selectedApplication ? (
+            <>
+              <div className='status-band '>
+                <div>
+                  <small style={{display:'block',color:'var(--muted)',marginBottom:'6px'}}>Dossier complet</small>
+                  <strong style={{fontSize:'1.15rem'}}>{selectedApplication.userTag}</strong>
+                  <div style={{color:'var(--muted)',marginTop:'6px'}}>
+                    Référence : {selectedApplication.id} • Score : {selectedApplication.quizScore || 0}/25 • Ticket : {selectedApplication.ticket ? '#' + String(selectedApplication.ticket.ticketNumber).padStart(4, '0') : 'Aucun'}
+                  </div>
+                </div>
+                <div className='top-actions'>
+                  <a className='btn' href={adminUrl}>Retour gestion</a>
+                  {selectedApplication.ticket ? <a className='btn ghost' href={'https://discord.com/channels/' + state.portal?.guildId + '/' + selectedApplication.ticket.channelId}>Ouvrir le ticket</a> : null}
+                </div>
+              </div>
+              <div className='detail-grid'>
+                <div className='answer-section'>
+                  <div className='panel'>
+                    <h4>Lecture candidature</h4>
+                    <div className='answers-list'>
+                      {(selectedApplication.answers || []).map((item, index) => (
+                        <div className='answer-item' key={item.question + index}>
+                          <strong>{item.question}</strong>
+                          <span>{item.answer}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className='detail-actions'>
+                  <div className='panel'>
+                    <h3>Résumé staff</h3>
+                    <div className='meta-grid' style={{marginTop:'16px'}}>
+                      <div className='meta'><small>Statut</small><strong>{selectedApplication.status.label}</strong></div>
+                      <div className='meta'><small>Score quiz</small><strong>{selectedApplication.quizScore || 0}/25</strong></div>
+                      <div className='meta'><small>Âge IRL</small><strong>{selectedApplication.ageIrl || 'N/R'}</strong></div>
+                      <div className='meta'><small>Créée le</small><strong>{formatDate(selectedApplication.createdAt)}</strong></div>
+                      <div className='meta'><small>Mise à jour</small><strong>{formatDate(selectedApplication.updatedAt)}</strong></div>
+                      <div className='meta'><small>Entretien</small><strong>{selectedApplication.interviewScheduledFor ? formatDate(selectedApplication.interviewScheduledFor) : 'Non fixé'}</strong></div>
+                    </div>
+                    {selectedApplication.notes ? <div className='alert info' style={{marginTop:'16px'}}>{selectedApplication.notes}</div> : null}
+                  </div>
+                  <div className='panel'>
+                    <h3>Accès rapide</h3>
+                    <p>Ce lien permet une lecture complète du dossier sans spammer le ticket Discord.</p>
+                    <div className='answers-list'>
+                      <div className='answer-item'>
+                        <strong>Lien staff</strong>
+                        <span className='link-inline'>{adminDetailUrl}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : null}
         </div>
       );
@@ -439,7 +506,8 @@ function renderRecruitmentPage({
         status: ['Statut', 'État de traitement du dossier candidat.'],
         confirmation: ['Transmission', 'Résumé clair du dossier envoyé et du ticket recrutement.'],
         access: ['Connexion Discord', 'Validation de session avant accès au portail.'],
-        admin: ['Gestion', 'Pilotage staff des candidatures et convocations recrutement.']
+        admin: ['Gestion', 'Pilotage staff des candidatures et convocations recrutement.'],
+        admin_detail: ['Dossier complet', 'Lecture détaillée d’une candidature depuis le portail staff.']
       };
 
       const pageTitle = Array.isArray(titles[view]) ? titles[view] : titles.home;
@@ -484,6 +552,7 @@ function renderRecruitmentPage({
             {view === 'status' ? StatusView() : null}
             {view === 'confirmation' ? ConfirmationView() : null}
             {view === 'admin' ? AdminView() : null}
+            {view === 'admin_detail' ? AdminDetailView() : null}
           </main>
         </div>
       );

@@ -228,6 +228,22 @@ function registerRecruitmentRoutes(app, client) {
     res.type("html").send(renderRecruitmentPage(state));
   });
 
+  app.get("/admin/recruitment/:applicationId", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    const state = await buildPortalState(client, user, "admin_detail", false, req.params.applicationId);
+    if (!state.portal?.selectedApplication) {
+      res.redirect("/admin");
+      return;
+    }
+
+    res.type("html").send(renderRecruitmentPage(state));
+  });
+
   app.get("/recruitment/login", async (req, res) => {
     const state = crypto.randomBytes(24).toString("hex");
     res.cookie("ombracore_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: isSecure() });
@@ -620,9 +636,10 @@ function evaluateQuiz(body) {
   }, 0);
 }
 
-async function buildPortalState(client, user, requestedView, submitted) {
+async function buildPortalState(client, user, requestedView, submitted, selectedApplicationId = null) {
   const baseUrl = getBaseUrl();
   const portal = {
+    guildId: process.env.GUILD_ID || null,
     latestApplication: null,
     latestRecruitmentTicket: null,
     rulesAccepted: false,
@@ -630,7 +647,8 @@ async function buildPortalState(client, user, requestedView, submitted) {
     recruitmentLocked: false,
     lockReason: null,
     isAdmin: isAdminUser(user),
-    adminApplications: []
+    adminApplications: [],
+    selectedApplication: null
   };
 
   if (user) {
@@ -644,9 +662,14 @@ async function buildPortalState(client, user, requestedView, submitted) {
 
     if (portal.isAdmin) {
       queries.push(Application.find({ guildId, adminHidden: { $ne: true } }).sort({ createdAt: -1 }).limit(50).lean());
+      queries.push(
+        selectedApplicationId
+          ? Application.findOne({ guildId, _id: selectedApplicationId, adminHidden: { $ne: true } }).lean()
+          : Promise.resolve(null)
+      );
     }
 
-    const [profile, application, ticket, lockedApplication, adminApplications = []] = await Promise.all(queries);
+    const [profile, application, ticket, lockedApplication, adminApplications = [], selectedApplication = null] = await Promise.all(queries);
 
     portal.rulesAccepted = Boolean(profile?.rulesAcceptedAt);
     portal.rulesAcceptedAt = profile?.rulesAcceptedAt || null;
@@ -657,6 +680,7 @@ async function buildPortalState(client, user, requestedView, submitted) {
     portal.adminApplications = portal.isAdmin
       ? await serializeAdminApplications(client, adminApplications)
       : [];
+    portal.selectedApplication = portal.isAdmin ? await serializeAdminApplicationDetail(client, selectedApplication) : null;
   }
 
   return {
@@ -669,7 +693,7 @@ async function buildPortalState(client, user, requestedView, submitted) {
 }
 
 function resolveInitialView({ requestedView, submitted, user, portal }) {
-  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation", "admin"]);
+  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation", "admin", "admin_detail"]);
 
   if (requestedView && allowedViews.has(requestedView)) {
     return requestedView;
@@ -685,6 +709,10 @@ function resolveInitialView({ requestedView, submitted, user, portal }) {
 
   if (requestedView === "admin" && portal.isAdmin) {
     return "admin";
+  }
+
+  if (requestedView === "admin_detail" && portal.isAdmin && portal.selectedApplication) {
+    return "admin_detail";
   }
 
   if (portal.recruitmentLocked || portal.latestApplication) {
@@ -748,6 +776,31 @@ async function serializeAdminApplications(client, applications) {
       };
     })
   );
+}
+
+async function serializeAdminApplicationDetail(client, application) {
+  if (!application) {
+    return null;
+  }
+
+  const serialized = serializeApplication(application);
+  const user = await client.users.fetch(application.userId).catch(() => null);
+  const ticket = await Ticket.findOne({
+    guildId: application.guildId,
+    authorId: application.userId,
+    type: "recruitment",
+    status: { $ne: "deleted" }
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return {
+    ...serialized,
+    userId: application.userId,
+    userTag: user ? user.tag : `Utilisateur ${application.userId}`,
+    username: user?.username || application.userId,
+    ticket: serializeTicket(ticket)
+  };
 }
 
 function serializeTicket(ticket) {

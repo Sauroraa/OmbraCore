@@ -174,6 +174,20 @@ function createApplicationReviewRow(applicationId) {
   );
 }
 
+function createRecruitmentReviewComponents(applicationId) {
+  const detailsUrl = `${getRecruitmentPortalUrl().replace(/\/recruitment$/, "")}/admin/recruitment/${applicationId}`;
+
+  return [
+    createApplicationReviewRow(applicationId),
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setLabel("Consulter le dossier complet")
+        .setStyle(ButtonStyle.Link)
+        .setURL(detailsUrl)
+    )
+  ];
+}
+
 function truncateField(value, max = 1024) {
   if (!value) {
     return "Non renseigné";
@@ -266,17 +280,20 @@ function createRecruitmentSubmissionEmbeds({ userMention, ticketNumber, typeLabe
     scoreValue >= 20
       ? "Seuil de validation atteint pour la transmission."
       : "Score sous le seuil automatique, lecture staff recommandée.";
+  const dossierUrl = `${getRecruitmentPortalUrl().replace(/\/recruitment$/, "")}/admin/recruitment/__APPLICATION_ID__`;
+  const quickRead = [...identity.slice(0, 5), ...profile.slice(0, 3)];
 
   const coverEmbed = createBaseEmbed({
     title: "Dossier de recrutement • Società Ombra",
     description:
-      `${userMention}, le dossier a été transmis dans le circuit recrutement.\nTout le contenu est regroupé ci-dessous pour une lecture staff plus propre et plus rapide.`,
+      `${userMention}, le dossier a été transmis dans le circuit recrutement.\nLe ticket conserve un résumé staff propre. La lecture complète se fait depuis le portail sécurisé.`,
     fields: [
       { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
       { name: "Motif", value: typeLabel, inline: true },
       { name: "Score questionnaire", value: `${scoreValue}/25`, inline: true },
       { name: "Source", value: sourceLabel, inline: true },
       { name: "Questions transmises", value: `${answers.length}`, inline: true },
+      { name: "Lecture complète", value: `[Ouvrir le dossier staff](${dossierUrl})`, inline: true },
       { name: "Évaluation", value: scoreTone, inline: false }
     ],
     color: 0x16120f
@@ -284,38 +301,32 @@ function createRecruitmentSubmissionEmbeds({ userMention, ticketNumber, typeLabe
 
   groupedEmbeds.push(coverEmbed);
 
-  if (identity.length || profile.length) {
+  if (quickRead.length) {
     groupedEmbeds.push(
       createFieldSectionEmbed(
         "Synthèse candidat",
-        "Identité RP, profil joueur et éléments immédiats à lire en priorité.",
+        "Vue rapide pour le ticket. Le détail complet est consultable sur le portail staff.",
         0x1a1816,
-        [...identity, ...profile]
+        quickRead
       )
     );
   }
 
-  if (rp.length) {
-    groupedEmbeds.push(...createDescriptionSectionEmbeds(
-      "Lecture RP et engagement",
-      "Motivation, comportement, disponibilité et engagement du candidat.",
-      0x201c18,
-      rp,
-      650
-    ));
-  }
+  groupedEmbeds.push(
+    createBaseEmbed({
+      title: "Lecture staff recommandée",
+      description:
+        "Le ticket reste volontairement compact pour éviter le spam inutile.\nUtilise le bouton ou le lien portail pour consulter la candidature complète, les réponses détaillées et les actions staff en un seul endroit.",
+      fields: [
+        { name: "Portail admin", value: `[Consulter la candidature complète](${dossierUrl})`, inline: false },
+        { name: "Résumé RP", value: `${rp.length} réponse(s) longues disponibles`, inline: true },
+        { name: "Quiz Ombra", value: `${quiz.length} réponse(s) consultables sur le portail`, inline: true }
+      ],
+      color: 0x181716
+    })
+  );
 
-  if (quiz.length) {
-    groupedEmbeds.push(...createDescriptionSectionEmbeds(
-      "Questionnaire Ombra",
-      "Réponses au questionnaire lore, règlement et compréhension de la Società.",
-      0x181716,
-      quiz,
-      220
-    ));
-  }
-
-  return groupedEmbeds.slice(0, 10);
+  return groupedEmbeds;
 }
 
 function chunkEmbeds(embeds, size = 10) {
@@ -357,15 +368,24 @@ async function injectRecruitmentSubmissionIntoChannel({
     score,
     answers,
     sourceLabel
-  });
-  const reviewRow = createApplicationReviewRow(application.id);
+  }).map((embed) => {
+    if (embed.data?.fields) {
+      embed.data.fields = embed.data.fields.map((field) => ({
+        ...field,
+        value: typeof field.value === "string" ? field.value.replace("__APPLICATION_ID__", application.id) : field.value
+      }));
+    }
 
-  await sendEmbedsInChunks(channel, embeds, [reviewRow]);
+    return embed;
+  });
+  const reviewComponents = createRecruitmentReviewComponents(application.id);
+
+  await sendEmbedsInChunks(channel, embeds, reviewComponents);
 
   if (logChannelId) {
     const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
     if (logChannel?.isTextBased()) {
-      await sendEmbedsInChunks(logChannel, embeds, [reviewRow]);
+      await sendEmbedsInChunks(logChannel, embeds, reviewComponents);
     }
   }
 
