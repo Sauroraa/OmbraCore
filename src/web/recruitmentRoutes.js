@@ -15,6 +15,7 @@ const FORM_DEFINITION = [
   { key: "age_irl", label: "Âge IRL" },
   { key: "pseudo_discord", label: "Pseudo Discord" },
   { key: "anciennete_rp", label: "Depuis combien de temps fais-tu du RP ?" },
+  { key: "disponibilite_generale", label: "Disponibilités générales" },
   { key: "serveurs_precedents", label: "Serveurs précédents" },
   { key: "experience_criminelle", label: "Expérience dans des organisations criminelles" },
   { key: "definition_rp", label: "Comment définirais-tu un RP sérieux ?" },
@@ -38,6 +39,159 @@ const FORM_DEFINITION = [
     key: "mise_en_situation",
     label:
       "Mise en situation RP : Tu es en mission discrète pour la Società. La police commence à suspecter quelque chose. Un coéquipier panique et risque de compromettre l’opération. Ta réponse :"
+  }
+];
+
+const QUIZ_DEFINITION = [
+  {
+    key: "quiz_01",
+    question: "Sur quoi repose la Società Ombra depuis sa naissance ?",
+    options: ["Violence, peur, territoire", "Discrétion, contrôle, influence", "Argent, armes, chaos"],
+    correctAnswer: "Discrétion, contrôle, influence"
+  },
+  {
+    key: "quiz_02",
+    question: "Quelle approche décrit le mieux la Società à Los Santos ?",
+    options: ["Elle conquiert les rues par la guerre", "Elle infiltre et devient nécessaire", "Elle s’expose pour dominer rapidement"],
+    correctAnswer: "Elle infiltre et devient nécessaire"
+  },
+  {
+    key: "quiz_03",
+    question: "Quel type de RP est attendu ?",
+    options: ["RP troll et provocateur", "RP sérieux et cohérent", "RP libre sans cadre"],
+    correctAnswer: "RP sérieux et cohérent"
+  },
+  {
+    key: "quiz_04",
+    question: "Que faut-il éviter selon la philosophie de la Società ?",
+    options: ["Le contrôle et la patience", "Le chaos et l’exposition", "La hiérarchie et le silence"],
+    correctAnswer: "Le chaos et l’exposition"
+  },
+  {
+    key: "quiz_05",
+    question: "Si un conflit HRP apparaît, quelle est la bonne attitude ?",
+    options: ["Le régler publiquement dans le général", "Rester calme et éviter le conflit public", "Ping tout le staff immédiatement"],
+    correctAnswer: "Rester calme et éviter le conflit public"
+  },
+  {
+    key: "quiz_06",
+    question: "Que représente la visibilité pour la Società Ombra ?",
+    options: ["Une preuve de puissance", "Une faiblesse", "Une obligation"],
+    correctAnswer: "Une faiblesse"
+  },
+  {
+    key: "quiz_07",
+    question: "Quel type d’action correspond à la méthode Ombra ?",
+    options: ["Action planifiée, propre et silencieuse", "Action rapide, bruyante et dissuasive", "Action improvisée selon l’urgence"],
+    correctAnswer: "Action planifiée, propre et silencieuse"
+  },
+  {
+    key: "quiz_08",
+    question: "Que doit faire un membre avec les informations internes ?",
+    options: ["Les garder confidentielles", "Les partager à ses proches", "Les utiliser librement hors contexte"],
+    correctAnswer: "Les garder confidentielles"
+  },
+  {
+    key: "quiz_09",
+    question: "Comment la Società contrôle-t-elle le jeu ?",
+    options: ["Par le pouvoir visible", "Par le pouvoir invisible", "Par la peur publique"],
+    correctAnswer: "Par le pouvoir invisible"
+  },
+  {
+    key: "quiz_10",
+    question: "Quel comportement est interdit sur le Discord ?",
+    options: ["Le respect des salons", "Le spam et les mentions abusives", "Les tickets clairs"],
+    correctAnswer: "Le spam et les mentions abusives"
+  },
+  {
+    key: "quiz_11",
+    question: "La structure Ombra est :",
+    options: ["Ouverte et transparente", "Cloisonnée avec identités protégées", "Basée sur l’improvisation"],
+    correctAnswer: "Cloisonnée avec identités protégées"
+  },
+  {
+    key: "quiz_12",
+    question: "Pourquoi la Società évite-t-elle les guerres inutiles ?",
+    options: ["Parce qu’elles coûtent cher et exposent", "Parce qu’elle n’a pas d’hommes", "Parce qu’elles sont interdites par la police"],
+    correctAnswer: "Parce qu’elles coûtent cher et exposent"
+  },
+  {
+    key: "quiz_13",
+    question: "Quel est le bon usage des tickets ?",
+    options: ["Les utiliser quand c’est nécessaire, avec respect", "Les spam pour accélérer", "Les ouvrir pour chaque détail mineur"],
+    correctAnswer: "Les utiliser quand c’est nécessaire, avec respect"
+  },
+  {
+    key: "quiz_14",
+    question: "Quand un obstacle apparaît pour la Società, l’idée est de :",
+    options: ["Créer un affrontement direct", "Le faire disparaître proprement", "Le menacer publiquement"],
+    correctAnswer: "Le faire disparaître proprement"
+  },
+  {
+    key: "quiz_15",
+    question: "Que vaut une candidature pour la Società ?",
+    options: ["Un simple formulaire", "Un dossier sérieux et honnête", "Une formalité sans conséquence"],
+    correctAnswer: "Un dossier sérieux et honnête"
+  },
+  {
+    key: "quiz_16",
+    question: "Quel type de pouvoir attire les balles selon la philosophie ?",
+    options: ["Le pouvoir invisible", "Le pouvoir visible", "Le pouvoir financier"],
+    correctAnswer: "Le pouvoir visible"
+  },
+  {
+    key: "quiz_17",
+    question: "Face à une scène RP en cours, il faut :",
+    options: ["Préserver l’immersion et la cohérence", "La casser si elle ralentit", "Privilégier le HRP"],
+    correctAnswer: "Préserver l’immersion et la cohérence"
+  },
+  {
+    key: "quiz_18",
+    question: "Quelle activité correspond à la couverture de la Società ?",
+    options: ["Import-export discret et entreprises de façade", "Streams publics et réseaux sociaux", "Convois armés visibles"],
+    correctAnswer: "Import-export discret et entreprises de façade"
+  },
+  {
+    key: "quiz_19",
+    question: "Quand un membre devient trop bruyant, la logique Ombra est :",
+    options: ["L’exposer publiquement", "Réduire ou effacer sa présence", "L’encourager à s’imposer"],
+    correctAnswer: "Réduire ou effacer sa présence"
+  },
+  {
+    key: "quiz_20",
+    question: "La force centrale de la Società est surtout :",
+    options: ["L’information", "La quantité d’armes", "La présence médiatique"],
+    correctAnswer: "L’information"
+  },
+  {
+    key: "quiz_21",
+    question: "Quel comportement est attendu envers les autres membres ?",
+    options: ["Respect et professionnalisme", "Compétition et provocation", "Distance hostile"],
+    correctAnswer: "Respect et professionnalisme"
+  },
+  {
+    key: "quiz_22",
+    question: "Comment les ordres circulent-ils dans la structure ?",
+    options: ["Ils descendent", "Ils montent uniquement", "Ils sont publics"],
+    correctAnswer: "Ils descendent"
+  },
+  {
+    key: "quiz_23",
+    question: "Quel est le bon réflexe face à une situation tendue en RP ?",
+    options: ["Garder le contrôle et protéger l’opération", "Paniquer avant les autres", "Changer totalement de rôle"],
+    correctAnswer: "Garder le contrôle et protéger l’opération"
+  },
+  {
+    key: "quiz_24",
+    question: "Que signifie rejoindre la Società Ombra ?",
+    options: ["Entrer dans une machine organisée", "Entrer dans un gang classique", "Obtenir un statut décoratif"],
+    correctAnswer: "Entrer dans une machine organisée"
+  },
+  {
+    key: "quiz_25",
+    question: "Quelle phrase décrit le mieux la Società Ombra ?",
+    options: ["Nous faisons du bruit pour exister", "Nous contrôlons sans être vus", "Nous dominons par la guerre ouverte"],
+    correctAnswer: "Nous contrôlons sans être vus"
   }
 ];
 
@@ -140,22 +294,101 @@ function registerRecruitmentRoutes(app, client) {
         throw new Error("Tu dois accepter le règlement sur Discord avant de candidater.");
       }
 
+      const lockedApplication = await Application.findOne({
+        guildId: guild.id,
+        userId: user.id,
+        locked: true,
+        refusalCode: "underage"
+      }).sort({ createdAt: -1 });
+
+      if (lockedApplication) {
+        throw new Error("Ta candidature a été refusée automatiquement pour âge IRL insuffisant. Aucun nouveau dépôt n'est autorisé.");
+      }
+
+      const existingOpenTicket = await Ticket.findOne({
+        guildId: guild.id,
+        authorId: user.id,
+        type: "recruitment",
+        status: "open"
+      });
+
+      if (existingOpenTicket) {
+        throw new Error("Tu as déjà un ticket recrutement ouvert.");
+      }
+
       const missingField = FORM_DEFINITION.find((item) => !String(req.body[item.key] || "").trim());
       if (missingField) {
         throw new Error(`Le champ "${missingField.label}" est requis.`);
       }
 
-      const answers = FORM_DEFINITION.map((item) => ({
+      const missingQuiz = QUIZ_DEFINITION.find((item) => !String(req.body[item.key] || "").trim());
+      if (missingQuiz) {
+        throw new Error(`La question "${missingQuiz.question}" doit être renseignée.`);
+      }
+
+      const ageIrl = Number.parseInt(String(req.body.age_irl || "").trim(), 10);
+      if (!Number.isFinite(ageIrl)) {
+        throw new Error("L'âge IRL doit être un nombre valide.");
+      }
+
+      const formAnswers = FORM_DEFINITION.map((item) => ({
         question: item.label,
         answer: String(req.body[item.key]).trim()
       }));
 
-      const score = answers.reduce((total, item) => total + Math.min(item.answer.length, 220), 0);
+      const quizAnswers = QUIZ_DEFINITION.map((item) => ({
+        question: item.question,
+        answer: String(req.body[item.key]).trim()
+      }));
+
+      const quizScore = evaluateQuiz(req.body);
+      const allAnswers = [...formAnswers, ...quizAnswers];
+
+      if (ageIrl < 18) {
+        await Application.create({
+          guildId: guild.id,
+          userId: user.id,
+          ageIrl,
+          status: "refused",
+          score: quizScore,
+          quizScore,
+          notes: "Refus automatique : âge IRL inférieur à 18 ans.",
+          autoRefused: true,
+          locked: true,
+          refusalCode: "underage",
+          answers: allAnswers
+        });
+
+        await member.send("Ta candidature Società Ombra a été refusée automatiquement : l'âge IRL minimum requis est de 18 ans. Aucun nouveau dépôt n'est autorisé.").catch(() => null);
+        throw new Error("Refus automatique : l'âge IRL minimum requis est de 18 ans. Ta candidature est bloquée définitivement.");
+      }
+
+      if (quizScore < 20) {
+        await Application.create({
+          guildId: guild.id,
+          userId: user.id,
+          ageIrl,
+          status: "refused",
+          score: quizScore,
+          quizScore,
+          notes: `Refus automatique : score quiz insuffisant (${quizScore}/25).`,
+          autoRefused: true,
+          locked: false,
+          refusalCode: "quiz_failed",
+          answers: allAnswers
+        });
+
+        await member.send(`Ta candidature Società Ombra a été refusée automatiquement : score insuffisant au questionnaire (${quizScore}/25, minimum requis : 20/25).`).catch(() => null);
+        throw new Error(`Refus automatique : score insuffisant au questionnaire (${quizScore}/25). Minimum requis : 20/25.`);
+      }
+
       const application = await Application.create({
         guildId: guild.id,
         userId: user.id,
-        answers,
-        score
+        ageIrl,
+        answers: allAnswers,
+        score: quizScore,
+        quizScore
       });
 
       const { existingTicket, existingChannel, ticketNumber } = await dispatchRecruitmentSubmission({
@@ -163,8 +396,8 @@ function registerRecruitmentRoutes(app, client) {
         member,
         client,
         application,
-        answers,
-        score,
+        answers: allAnswers,
+        score: quizScore,
         sourceLabel: "Portail web"
       });
 
@@ -172,8 +405,7 @@ function registerRecruitmentRoutes(app, client) {
         throw new Error(existingChannel ? `Tu as déjà un ticket recrutement ouvert : #${existingChannel.name}` : "Tu as déjà un ticket recrutement ouvert.");
       }
 
-      await member.send(`Ton dossier Società Ombra a bien été transmis. Référence : #${String(ticketNumber).padStart(4, "0")}`).catch(() => null);
-
+      await member.send(`Ton dossier Società Ombra a bien été transmis. Référence : #${String(ticketNumber).padStart(4, "0")} • Score questionnaire : ${quizScore}/25`).catch(() => null);
       res.redirect("/recruitment?submitted=1");
     } catch (error) {
       const state = await buildPortalState(client, user, "form", false);
@@ -182,27 +414,38 @@ function registerRecruitmentRoutes(app, client) {
   });
 }
 
+function evaluateQuiz(body) {
+  return QUIZ_DEFINITION.reduce((score, item) => {
+    return score + (String(body[item.key] || "").trim() === item.correctAnswer ? 1 : 0);
+  }, 0);
+}
+
 async function buildPortalState(client, user, requestedView, submitted) {
   const baseUrl = getBaseUrl();
   const portal = {
     latestApplication: null,
     latestRecruitmentTicket: null,
     rulesAccepted: false,
-    rulesAcceptedAt: null
+    rulesAcceptedAt: null,
+    recruitmentLocked: false,
+    lockReason: null
   };
 
   if (user) {
     const guildId = process.env.GUILD_ID;
-    const [profile, application, ticket] = await Promise.all([
+    const [profile, application, ticket, lockedApplication] = await Promise.all([
       UserProfile.findOne({ guildId, userId: user.id }).lean(),
       Application.findOne({ guildId, userId: user.id }).sort({ createdAt: -1 }).lean(),
-      Ticket.findOne({ guildId, authorId: user.id, type: "recruitment" }).sort({ createdAt: -1 }).lean()
+      Ticket.findOne({ guildId, authorId: user.id, type: "recruitment" }).sort({ createdAt: -1 }).lean(),
+      Application.findOne({ guildId, userId: user.id, locked: true, refusalCode: "underage" }).sort({ createdAt: -1 }).lean()
     ]);
 
     portal.rulesAccepted = Boolean(profile?.rulesAcceptedAt);
     portal.rulesAcceptedAt = profile?.rulesAcceptedAt || null;
     portal.latestApplication = serializeApplication(application);
     portal.latestRecruitmentTicket = serializeTicket(ticket);
+    portal.recruitmentLocked = Boolean(lockedApplication);
+    portal.lockReason = lockedApplication?.notes || null;
   }
 
   return {
@@ -229,7 +472,7 @@ function resolveInitialView({ requestedView, submitted, user, portal }) {
     return "home";
   }
 
-  if (portal.latestApplication) {
+  if (portal.recruitmentLocked || portal.latestApplication) {
     return "status";
   }
 
@@ -245,7 +488,11 @@ function serializeApplication(application) {
     pending: { key: "transmis", label: "Transmis", tone: "neutral" },
     on_hold: { key: "in_review", label: "En étude", tone: "warning" },
     accepted: { key: "retained", label: "Retenu", tone: "success" },
-    refused: { key: "refused", label: "Refusé", tone: "danger" }
+    refused: {
+      key: application.autoRefused ? "auto_refused" : "refused",
+      label: application.autoRefused ? "Refus automatique" : "Refusé",
+      tone: "danger"
+    }
   };
 
   const mappedStatus = statusMap[application.status] || statusMap.pending;
@@ -256,6 +503,12 @@ function serializeApplication(application) {
     updatedAt: application.updatedAt || null,
     reviewedAt: application.reviewedAt || null,
     score: application.score || 0,
+    quizScore: application.quizScore || 0,
+    ageIrl: application.ageIrl || null,
+    notes: application.notes || "",
+    autoRefused: Boolean(application.autoRefused),
+    locked: Boolean(application.locked),
+    refusalCode: application.refusalCode || null,
     sectionCount: Array.isArray(application.answers) ? application.answers.length : 0,
     answers: Array.isArray(application.answers) ? application.answers : [],
     status: mappedStatus
