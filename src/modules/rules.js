@@ -7,6 +7,7 @@ const { sendLog } = require("../services/logService");
 const { sendValidatedWelcome } = require("./welcome");
 
 const FIXED_MEMBER_ROLE_ID = "1485315803350827118";
+const VISITOR_ROLE_LABEL = "Visiteurs";
 
 function createRulesPanel(config = {}) {
   return createRulesPanelFromConfig(config);
@@ -41,7 +42,7 @@ function createRulesPanelFromConfig(config) {
 async function acceptRules(interaction, config) {
   const member = interaction.member;
   const guild = interaction.guild;
-  const memberRoleId = config.roles?.member || FIXED_MEMBER_ROLE_ID;
+  const memberRoleId = FIXED_MEMBER_ROLE_ID;
 
   if (member.roles.cache.has(memberRoleId)) {
     await interaction.reply({ content: "Tu as deja valide le reglement.", ephemeral: true });
@@ -55,8 +56,12 @@ async function acceptRules(interaction, config) {
     roleChanges.push("Retrait du role Non verifie");
   }
 
-  await member.roles.add(memberRoleId).catch(() => null);
-  roleChanges.push(`Ajout du role membre (${memberRoleId})`);
+  const assignedRole = await member.roles.add(memberRoleId).then(() => true).catch(() => false);
+  roleChanges.push(
+    assignedRole
+      ? `Ajout du role ${VISITOR_ROLE_LABEL} (${memberRoleId})`
+      : `Echec de l'ajout du role ${VISITOR_ROLE_LABEL} (${memberRoleId})`
+  );
 
   if (config.roles?.candidate && member.roles.cache.has(config.roles.candidate)) {
     roleChanges.push("Conservation du role Candidat");
@@ -75,8 +80,24 @@ async function acceptRules(interaction, config) {
 
   await sendValidatedWelcome(member, config);
 
+  await member.send({
+    embeds: [
+      createBaseEmbed({
+        title: "Accès validé • Società Ombra",
+        description:
+          "Ton accès au serveur a été validé avec succès.\nLe rôle **Visiteurs** t’a été attribué et les espaces autorisés sont désormais accessibles.",
+        fields: [
+          { name: "Rôle attribué", value: `<@&${memberRoleId}>`, inline: true },
+          { name: "Statut", value: "Validation confirmée", inline: true },
+          { name: "Suite", value: "Tu peux maintenant suivre les panneaux, ouvrir un ticket si nécessaire et consulter les espaces publics autorisés.", inline: false }
+        ],
+        color: 0x214428
+      })
+    ]
+  }).catch(() => null);
+
   await interaction.reply({
-    content: "Validation enregistrée. Ton rôle membre a été attribué et ton accueil a été publié.",
+    content: "Validation enregistrée. Le rôle Visiteurs a été attribué et un message privé a été envoyé.",
     ephemeral: true
   });
 }
