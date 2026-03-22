@@ -101,6 +101,21 @@ Flux :
 - OmbraCore cree automatiquement un ticket recrutement
 - toutes les reponses sont injectees dans le ticket et dans le salon staff
 
+## Nginx + Certbot
+
+Une configuration prete pour `societa.univers-bot.fr` est incluse :
+
+- [nginx/conf/ombracore.conf](/f:/Sauroraa%202k26/Societa/Societa%20Bot/nginx/conf/ombracore.conf)
+- [DEPLOY_NGINX_CERTBOT.md](/f:/Sauroraa%202k26/Societa/Societa%20Bot/DEPLOY_NGINX_CERTBOT.md)
+
+Chemin recommande sur le serveur :
+
+```bash
+cp /home/OmbreCore/nginx/conf/ombracore.conf /etc/nginx/sites-available/ombracore.conf
+ln -sf /etc/nginx/sites-available/ombracore.conf /etc/nginx/sites-enabled/ombracore.conf
+certbot --nginx -d societa.univers-bot.fr
+```
+
 ## Variables d'environnement
 
 ```env
