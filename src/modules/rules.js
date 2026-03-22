@@ -4,6 +4,9 @@ const { ACCEPT_RULES, NEED_HELP } = require("../constants/customIds");
 const { createBaseEmbed } = require("../utils/embeds");
 const { markRulesAccepted } = require("../services/profileService");
 const { sendLog } = require("../services/logService");
+const { sendValidatedWelcome } = require("./welcome");
+
+const FIXED_MEMBER_ROLE_ID = "1485315803350827118";
 
 function createRulesPanel(config = {}) {
   return createRulesPanelFromConfig(config);
@@ -38,8 +41,9 @@ function createRulesPanelFromConfig(config) {
 async function acceptRules(interaction, config) {
   const member = interaction.member;
   const guild = interaction.guild;
+  const memberRoleId = config.roles?.member || FIXED_MEMBER_ROLE_ID;
 
-  if (config.roles?.member && member.roles.cache.has(config.roles.member)) {
+  if (member.roles.cache.has(memberRoleId)) {
     await interaction.reply({ content: "Tu as deja valide le reglement.", ephemeral: true });
     return;
   }
@@ -51,10 +55,8 @@ async function acceptRules(interaction, config) {
     roleChanges.push("Retrait du role Non verifie");
   }
 
-  if (config.roles?.member) {
-    await member.roles.add(config.roles.member).catch(() => null);
-    roleChanges.push("Ajout du role Membre");
-  }
+  await member.roles.add(memberRoleId).catch(() => null);
+  roleChanges.push(`Ajout du role membre (${memberRoleId})`);
 
   if (config.roles?.candidate && member.roles.cache.has(config.roles.candidate)) {
     roleChanges.push("Conservation du role Candidat");
@@ -67,10 +69,16 @@ async function acceptRules(interaction, config) {
     config.channels?.rulesLog,
     "Reglement accepte",
     `${member.user.tag} a valide le reglement.`,
-    [{ name: "Actions", value: roleChanges.join("\n") || "Aucune modification detectee." }]
+    [{ name: "Actions", value: roleChanges.join("\n") || "Aucune modification detectee." }],
+    { category: "rules", level: "success" }
   );
 
-  await interaction.reply({ content: "Validation enregistree. Bienvenue dans Societa Ombra.", ephemeral: true });
+  await sendValidatedWelcome(member, config);
+
+  await interaction.reply({
+    content: "Validation enregistrée. Ton rôle membre a été attribué et ton accueil a été publié.",
+    ephemeral: true
+  });
 }
 
 module.exports = {

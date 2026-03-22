@@ -171,6 +171,38 @@ function createWelcomeEmbed(member, config) {
   return createWelcomeEmbeds(member, config)[0];
 }
 
+async function sendValidatedWelcome(member, config) {
+  if (!config.channels?.welcome) {
+    return false;
+  }
+
+  const welcomeChannel = await member.guild.channels.fetch(config.channels.welcome).catch(() => null);
+  if (!welcomeChannel?.isTextBased()) {
+    return false;
+  }
+
+  const embeds = createWelcomeEmbeds(member, config);
+  embeds[0]
+    .setTitle("✦ Accès validé")
+    .setDescription(
+      `Bienvenue ${member} au sein de **${member.guild.name}**.\n\nTon accès est maintenant validé. Les salons principaux sont ouverts et ton intégration dans la structure est active.\n\n> Une entrée propre. Un cadre validé. La suite commence maintenant.`
+    );
+  embeds[1]
+    .setTitle("⟡ Orientation active")
+    .setDescription("Le règlement est validé. Tu peux maintenant circuler, ouvrir un ticket si nécessaire et suivre la procédure de recrutement depuis les panneaux dédiés.");
+
+  const components = createWelcomeComponents(config);
+  return safeSendChannelMessage(
+    welcomeChannel,
+    {
+      content: `${member} vient de valider le règlement et rejoint officiellement la structure.`,
+      embeds,
+      components
+    },
+    `validated welcome message for ${member.user.tag}`
+  );
+}
+
 function createWelcomeComponents(config) {
   const row = new ActionRowBuilder();
 
@@ -298,4 +330,4 @@ async function handleMemberJoin(member, config) {
   }
 }
 
-module.exports = { handleMemberJoin, createWelcomeEmbed };
+module.exports = { handleMemberJoin, createWelcomeEmbed, sendValidatedWelcome };

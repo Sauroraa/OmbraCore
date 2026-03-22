@@ -1,6 +1,14 @@
 const GuildConfig = require("../models/GuildConfig");
 const defaultGuildConfig = require("../config/defaultGuildConfig");
 
+function sanitizeLegacyConfig(config) {
+  if (config?.tickets?.types?.recruitment) {
+    delete config.tickets.types.recruitment;
+  }
+
+  return config;
+}
+
 function mergeDefaults(currentValue, defaultValue) {
   if (Array.isArray(defaultValue)) {
     return Array.isArray(currentValue) && currentValue.length ? currentValue : defaultValue;
@@ -37,7 +45,7 @@ async function loadRuntimeConfig() {
       guildId,
       ...defaultGuildConfig
     });
-    return config;
+    return sanitizeLegacyConfig(config);
   }
 
   const mergedConfig = {
@@ -53,6 +61,7 @@ async function loadRuntimeConfig() {
   };
 
   Object.assign(config, mergedConfig);
+  sanitizeLegacyConfig(config);
   await config.save();
 
   return config;
