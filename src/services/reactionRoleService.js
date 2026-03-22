@@ -107,6 +107,7 @@ async function ensureRulesReaction(client) {
 }
 
 module.exports = {
+  resolveRulesReactionSettings,
   fetchReactionContext,
   ensureRulesReaction
 };
