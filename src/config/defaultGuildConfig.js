@@ -50,9 +50,9 @@ module.exports = {
     commandsLog: ""
   },
   categories: {
-    supportTickets: "",
-    recruitmentTickets: "",
-    directionTickets: ""
+    supportTickets: "1485333181807984760",
+    recruitmentTickets: "1485333280596430909",
+    directionTickets: "1485333323709546657"
   },
   roles: {
     unverified: "",
@@ -102,34 +102,34 @@ module.exports = {
     types: {
       support: {
         label: "Support general",
-        categoryId: ""
+        categoryId: "1485333181807984760"
       },
       direction: {
         label: "Contact direction",
-        categoryId: ""
+        categoryId: "1485333323709546657"
       },
       member_report: {
         label: "Probleme membre",
-        categoryId: ""
+        categoryId: "1485333181807984760"
       },
       recruitment: {
         label: "Ticket recrutement",
-        categoryId: ""
+        categoryId: "1485333280596430909"
       },
       business_contact: {
         label: "Demande de Contact",
-        categoryId: ""
+        categoryId: "1485346304329777303"
       },
       partnership: {
         label: "Ticket partenariat",
-        categoryId: ""
+        categoryId: "1485346304329777303"
       },
       rp_complaint: {
         label: "Plainte RP",
-        categoryId: ""
+        categoryId: "1485333323709546657"
       }
     },
-    closeArchiveCategoryId: ""
+    closeArchiveCategoryId: "1485333364310282342"
   },
   reactions: {
     rulesMessageId: "1485325130598060132",
