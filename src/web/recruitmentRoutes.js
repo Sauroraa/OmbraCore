@@ -1,6 +1,7 @@
 const crypto = require("node:crypto");
 
 const Application = require("../models/Application");
+const Ticket = require("../models/Ticket");
 const UserProfile = require("../models/UserProfile");
 const { dispatchRecruitmentSubmission } = require("../modules/recruitment");
 const { renderRecruitmentPage } = require("./recruitmentPage");
@@ -48,7 +49,8 @@ function registerRecruitmentRoutes(app, client) {
   app.get("/recruitment", async (req, res) => {
     const user = readSession(req);
     const submitted = req.query.submitted === "1";
-    res.type("html").send(renderRecruitmentPage({ baseUrl: getBaseUrl(), user, submitted }));
+    const state = await buildPortalState(client, user, req.query.view, submitted);
+    res.type("html").send(renderRecruitmentPage(state));
   });
 
   app.get("/recruitment/login", async (req, res) => {
@@ -67,7 +69,8 @@ function registerRecruitmentRoutes(app, client) {
   app.get("/recruitment/callback", async (req, res) => {
     try {
       if (!req.query.code || !req.query.state || req.cookies.ombracore_oauth_state !== req.query.state) {
-        res.type("html").status(400).send(renderRecruitmentPage({ baseUrl: getBaseUrl(), error: "Connexion Discord invalide ou expirée." }));
+        const state = await buildPortalState(client, null, "access", false);
+        res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: "Connexion Discord invalide ou expirée." }));
         return;
       }
 
@@ -105,7 +108,9 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/recruitment");
     } catch (_error) {
-      res.type("html").status(500).send(renderRecruitmentPage({ baseUrl: getBaseUrl(), error: "Impossible de finaliser la connexion Discord." }));
+      const user = readSession(req);
+      const state = await buildPortalState(client, user, "access", false);
+      res.type("html").status(500).send(renderRecruitmentPage({ ...state, error: "Impossible de finaliser la connexion Discord." }));
     }
   });
 
@@ -118,7 +123,8 @@ function registerRecruitmentRoutes(app, client) {
   app.post("/recruitment/submit", async (req, res) => {
     const user = readSession(req);
     if (!user) {
-      res.type("html").status(401).send(renderRecruitmentPage({ baseUrl: getBaseUrl(), error: "Connexion Discord requise." }));
+      const state = await buildPortalState(client, null, "access", false);
+      res.type("html").status(401).send(renderRecruitmentPage({ ...state, error: "Connexion Discord requise." }));
       return;
     }
 
@@ -170,9 +176,104 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/recruitment?submitted=1");
     } catch (error) {
-      res.type("html").status(400).send(renderRecruitmentPage({ baseUrl: getBaseUrl(), user, error: error.message || "Impossible de transmettre le dossier." }));
+      const state = await buildPortalState(client, user, "form", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de transmettre le dossier." }));
     }
   });
+}
+
+async function buildPortalState(client, user, requestedView, submitted) {
+  const baseUrl = getBaseUrl();
+  const portal = {
+    latestApplication: null,
+    latestRecruitmentTicket: null,
+    rulesAccepted: false,
+    rulesAcceptedAt: null
+  };
+
+  if (user) {
+    const guildId = process.env.GUILD_ID;
+    const [profile, application, ticket] = await Promise.all([
+      UserProfile.findOne({ guildId, userId: user.id }).lean(),
+      Application.findOne({ guildId, userId: user.id }).sort({ createdAt: -1 }).lean(),
+      Ticket.findOne({ guildId, authorId: user.id, type: "recruitment" }).sort({ createdAt: -1 }).lean()
+    ]);
+
+    portal.rulesAccepted = Boolean(profile?.rulesAcceptedAt);
+    portal.rulesAcceptedAt = profile?.rulesAcceptedAt || null;
+    portal.latestApplication = serializeApplication(application);
+    portal.latestRecruitmentTicket = serializeTicket(ticket);
+  }
+
+  return {
+    baseUrl,
+    user,
+    submitted,
+    initialView: resolveInitialView({ requestedView, submitted, user, portal }),
+    portal
+  };
+}
+
+function resolveInitialView({ requestedView, submitted, user, portal }) {
+  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation"]);
+
+  if (requestedView && allowedViews.has(requestedView)) {
+    return requestedView;
+  }
+
+  if (submitted) {
+    return "confirmation";
+  }
+
+  if (!user) {
+    return "home";
+  }
+
+  if (portal.latestApplication) {
+    return "status";
+  }
+
+  return "dossier";
+}
+
+function serializeApplication(application) {
+  if (!application) {
+    return null;
+  }
+
+  const statusMap = {
+    pending: { key: "transmis", label: "Transmis", tone: "neutral" },
+    on_hold: { key: "in_review", label: "En étude", tone: "warning" },
+    accepted: { key: "retained", label: "Retenu", tone: "success" },
+    refused: { key: "refused", label: "Refusé", tone: "danger" }
+  };
+
+  const mappedStatus = statusMap[application.status] || statusMap.pending;
+
+  return {
+    id: String(application._id),
+    createdAt: application.createdAt || null,
+    updatedAt: application.updatedAt || null,
+    reviewedAt: application.reviewedAt || null,
+    score: application.score || 0,
+    sectionCount: Array.isArray(application.answers) ? application.answers.length : 0,
+    answers: Array.isArray(application.answers) ? application.answers : [],
+    status: mappedStatus
+  };
+}
+
+function serializeTicket(ticket) {
+  if (!ticket) {
+    return null;
+  }
+
+  return {
+    ticketNumber: ticket.ticketNumber,
+    channelId: ticket.channelId,
+    status: ticket.status,
+    openedAt: ticket.openedAt || ticket.createdAt || null,
+    updatedAt: ticket.updatedAt || null
+  };
 }
 
 function getBaseUrl() {
