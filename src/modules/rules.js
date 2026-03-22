@@ -44,8 +44,12 @@ async function acceptRules(interaction, config) {
   const guild = interaction.guild;
   const memberRoleId = FIXED_MEMBER_ROLE_ID;
 
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => null);
+  }
+
   if (member.roles.cache.has(memberRoleId)) {
-    await interaction.reply({ content: "Tu as deja valide le reglement.", ephemeral: true });
+    await interaction.editReply({ content: "Tu as deja valide le reglement." }).catch(() => null);
     return;
   }
 
@@ -78,7 +82,7 @@ async function acceptRules(interaction, config) {
     { category: "rules", level: "success" }
   );
 
-  await sendValidatedWelcome(member, config);
+  const welcomeResult = await sendValidatedWelcome(member, config);
 
   await member.send({
     embeds: [
@@ -87,7 +91,7 @@ async function acceptRules(interaction, config) {
         description:
           "Ton accès au serveur a été validé avec succès.\nLe rôle **Visiteurs** t’a été attribué et les espaces autorisés sont désormais accessibles.",
         fields: [
-          { name: "Rôle attribué", value: `<@&${memberRoleId}>`, inline: true },
+          { name: "Rôle attribué", value: "Visiteurs", inline: true },
           { name: "Statut", value: "Validation confirmée", inline: true },
           { name: "Suite", value: "Tu peux maintenant suivre les panneaux, ouvrir un ticket si nécessaire et consulter les espaces publics autorisés.", inline: false }
         ],
@@ -96,10 +100,15 @@ async function acceptRules(interaction, config) {
     ]
   }).catch(() => null);
 
-  await interaction.reply({
-    content: "Validation enregistrée. Le rôle Visiteurs a été attribué et un message privé a été envoyé.",
-    ephemeral: true
-  });
+  const responseText = welcomeResult.sent
+    ? welcomeResult.reused
+      ? "Validation enregistrée. Le rôle Visiteurs a été attribué, le message privé a été envoyé et l’accueil existant a été mis à jour."
+      : "Validation enregistrée. Le rôle Visiteurs a été attribué, le message privé a été envoyé et l’accueil a été publié."
+    : "Validation enregistrée. Le rôle Visiteurs a été attribué et le message privé a été envoyé.";
+
+  await interaction.editReply({
+    content: responseText
+  }).catch(() => null);
 }
 
 module.exports = {

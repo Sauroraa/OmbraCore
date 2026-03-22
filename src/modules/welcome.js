@@ -5,7 +5,7 @@ const {
   ButtonStyle
 } = require("discord.js");
 
-const { ensureUserProfile } = require("../services/profileService");
+const { ensureUserProfile, getUserProfile, setRulesWelcomeMessage } = require("../services/profileService");
 const { sendLog } = require("../services/logService");
 const { createLogger } = require("../utils/logger");
 
@@ -173,12 +173,19 @@ function createWelcomeEmbed(member, config) {
 
 async function sendValidatedWelcome(member, config) {
   if (!config.channels?.welcome) {
-    return false;
+    return { sent: false, reused: false };
   }
 
   const welcomeChannel = await member.guild.channels.fetch(config.channels.welcome).catch(() => null);
   if (!welcomeChannel?.isTextBased()) {
-    return false;
+    return { sent: false, reused: false };
+  }
+
+  const profile = await getUserProfile(member.guild.id, member.id);
+  let existingMessage = null;
+
+  if (profile?.rulesWelcomeMessageId && profile?.rulesWelcomeChannelId === welcomeChannel.id) {
+    existingMessage = await welcomeChannel.messages.fetch(profile.rulesWelcomeMessageId).catch(() => null);
   }
 
   const embeds = createWelcomeEmbeds(member, config);
@@ -192,15 +199,27 @@ async function sendValidatedWelcome(member, config) {
     .setDescription("Le règlement est validé. Tu peux maintenant circuler, ouvrir un ticket si nécessaire et suivre la procédure de recrutement depuis les panneaux dédiés.");
 
   const components = createWelcomeComponents(config);
-  return safeSendChannelMessage(
-    welcomeChannel,
-    {
-      content: `${member} vient de valider le règlement et rejoint officiellement la structure.`,
-      embeds,
-      components
-    },
-    `validated welcome message for ${member.user.tag}`
-  );
+  const payload = {
+    content: `${member} vient de valider le règlement et rejoint officiellement la structure.`,
+    embeds,
+    components
+  };
+
+  if (existingMessage) {
+    const edited = await existingMessage.edit(payload).then(() => true).catch(() => false);
+    if (edited) {
+      return { sent: true, reused: true, messageId: existingMessage.id };
+    }
+  }
+
+  try {
+    const sentMessage = await welcomeChannel.send(payload);
+    await setRulesWelcomeMessage(member.guild.id, member.id, welcomeChannel.id, sentMessage.id);
+    return { sent: true, reused: false, messageId: sentMessage.id };
+  } catch (error) {
+    logger.warn(`Failed to send validated welcome message for ${member.user.tag}: ${error.message}`);
+    return { sent: false, reused: false };
+  }
 }
 
 function createWelcomeComponents(config) {

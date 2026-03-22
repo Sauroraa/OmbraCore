@@ -33,7 +33,29 @@ async function markRulesAccepted(guildId, userId, rolesSnapshot = []) {
   );
 }
 
+async function setRulesWelcomeMessage(guildId, userId, channelId, messageId) {
+  return UserProfile.findOneAndUpdate(
+    { guildId, userId },
+    {
+      $set: {
+        rulesWelcomeChannelId: channelId || null,
+        rulesWelcomeMessageId: messageId || null
+      }
+    },
+    {
+      new: true,
+      upsert: true
+    }
+  );
+}
+
+async function getUserProfile(guildId, userId) {
+  return UserProfile.findOne({ guildId, userId });
+}
+
 module.exports = {
   ensureUserProfile,
-  markRulesAccepted
+  markRulesAccepted,
+  setRulesWelcomeMessage,
+  getUserProfile
 };
