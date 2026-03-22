@@ -2,7 +2,7 @@ const { sendLog } = require("../services/logService");
 const { fetchReactionContext } = require("../services/reactionRoleService");
 
 module.exports = {
-  name: "messageReactionAdd",
+  name: "messageReactionRemove",
   async execute(reaction, user, client) {
     if (user.bot) {
       return;
@@ -18,13 +18,13 @@ module.exports = {
       return;
     }
 
-    if (!member.roles.cache.has(context.roleId)) {
-      await member.roles.add(context.roleId).catch(() => null);
+    if (member.roles.cache.has(context.roleId)) {
+      await member.roles.remove(context.roleId).catch(() => null);
       await sendLog(
         context.guild,
         client.runtimeConfig.channels?.rolesLog,
-        "Autorôle règlement",
-        `${user.tag} a obtenu le rôle via réaction sur le message règlement.`,
+        "Autorôle règlement retiré",
+        `${user.tag} a perdu le rôle en retirant sa réaction du message règlement.`,
         [{ name: "Rôle", value: `<@&${context.roleId}>`, inline: true }]
       );
     }

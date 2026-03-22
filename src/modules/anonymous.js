@@ -3,6 +3,8 @@ const UserProfile = require("../models/UserProfile");
 const { createBaseEmbed } = require("../utils/embeds");
 const { sendLog } = require("../services/logService");
 
+const ANONYMOUS_COOLDOWN_SECONDS = 3;
+
 async function submitAnonymousMessage(interaction, client) {
   const config = client.runtimeConfig;
   const guildId = interaction.guild.id;
@@ -66,7 +68,7 @@ async function submitAnonymousMessage(interaction, client) {
     { guildId, userId: authorId },
     {
       $set: {
-        anonymousCooldownUntil: new Date(Date.now() + (config.automod?.anonymousCooldownSeconds || 300) * 1000)
+        anonymousCooldownUntil: new Date(Date.now() + ANONYMOUS_COOLDOWN_SECONDS * 1000)
       }
     },
     { upsert: true }

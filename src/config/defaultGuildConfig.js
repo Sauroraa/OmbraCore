@@ -55,7 +55,6 @@ module.exports = {
     blockedLinkPatterns: ["discord.gg/", "discord.com/invite/"],
     allowedLinkPatterns: [],
     capsThreshold: 0.7,
-    anonymousCooldownSeconds: 300,
     timeoutMinutes: 10,
     exemptRoleIds: []
   },
@@ -112,6 +111,7 @@ module.exports = {
   },
   reactions: {
     rulesMessageId: "1485325130598060132",
-    rulesRoleId: "1485315803350827118"
+    rulesRoleId: "1485315803350827118",
+    rulesEmoji: "✅"
   }
 };

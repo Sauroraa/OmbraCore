@@ -79,7 +79,6 @@ module.exports = {
         .addIntegerOption((option) => option.setName("spam_threshold").setDescription("Nombre de messages avant detection spam"))
         .addIntegerOption((option) => option.setName("mention_threshold").setDescription("Nombre de mentions max"))
         .addIntegerOption((option) => option.setName("timeout_minutes").setDescription("Timeout auto en minutes"))
-        .addIntegerOption((option) => option.setName("anonymous_cooldown").setDescription("Cooldown /ano en secondes"))
         .addNumberOption((option) => option.setName("caps_threshold").setDescription("Seuil majuscules entre 0.1 et 1.0").setMinValue(0.1).setMaxValue(1))
     )
     .addSubcommand((subcommand) =>
@@ -205,7 +204,7 @@ module.exports = {
         `Salons: welcome=${config.channels?.welcome || "non defini"} | rules=${config.channels?.rules || "non defini"} | tickets=${config.channels?.ticketPanel || "non defini"}`,
         `Logs: join=${config.channels?.joinLog || "non defini"} | rules=${config.channels?.rulesLog || "non defini"} | tickets=${config.channels?.ticketsLog || "non defini"} | anon=${config.channels?.anonymousLog || "non defini"}`,
         `Roles: unverified=${config.roles?.unverified || "non defini"} | member=${config.roles?.member || "non defini"} | staff=${config.roles?.staff || "non defini"} | recruiter=${config.roles?.recruiter || "non defini"}`,
-        `Automod: spam=${config.automod?.spamThreshold} | fenetre=${config.automod?.spamWindowMs}ms | mentions=${config.automod?.mentionThreshold} | caps=${config.automod?.capsThreshold} | timeout=${config.automod?.timeoutMinutes}min | ano=${config.automod?.anonymousCooldownSeconds}s`,
+        `Automod: spam=${config.automod?.spamThreshold} | fenetre=${config.automod?.spamWindowMs}ms | mentions=${config.automod?.mentionThreshold} | caps=${config.automod?.capsThreshold} | timeout=${config.automod?.timeoutMinutes}min | ano=3s fixe`,
         `Tickets: archive=${config.tickets?.closeArchiveCategoryId || "non defini"} | support=${config.tickets?.types?.support?.categoryId || "non defini"} | recruitment=${config.tickets?.types?.recruitment?.categoryId || "non defini"}`,
         `Branding: name=${config.brand?.name || "non defini"} | footer=${config.brand?.footer || "non defini"}`
       ].join("\n");
@@ -252,14 +251,12 @@ module.exports = {
       const spamThreshold = interaction.options.getInteger("spam_threshold");
       const mentionThreshold = interaction.options.getInteger("mention_threshold");
       const timeoutMinutes = interaction.options.getInteger("timeout_minutes");
-      const anonymousCooldown = interaction.options.getInteger("anonymous_cooldown");
       const capsThreshold = interaction.options.getNumber("caps_threshold");
 
       if (spamWindowMs !== null) config.automod.spamWindowMs = spamWindowMs;
       if (spamThreshold !== null) config.automod.spamThreshold = spamThreshold;
       if (mentionThreshold !== null) config.automod.mentionThreshold = mentionThreshold;
       if (timeoutMinutes !== null) config.automod.timeoutMinutes = timeoutMinutes;
-      if (anonymousCooldown !== null) config.automod.anonymousCooldownSeconds = anonymousCooldown;
       if (capsThreshold !== null) config.automod.capsThreshold = capsThreshold;
 
       await config.save();
