@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("discord.js");
 
-const { createRecruitmentModal, createRecruitmentPanel } = require("../../modules/recruitment");
+const { createRecruitmentPanel, createRecruitmentPortalPayload } = require("../../modules/recruitment");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,6 +15,6 @@ module.exports = {
       return;
     }
 
-    await interaction.showModal(createRecruitmentModal(client.runtimeConfig));
+    await interaction.reply({ ...createRecruitmentPortalPayload(), ephemeral: true });
   }
 };

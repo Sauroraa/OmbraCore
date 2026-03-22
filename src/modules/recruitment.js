@@ -1,4 +1,13 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, ModalBuilder, PermissionFlagsBits, TextInputBuilder, TextInputStyle } = require("discord.js");
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ChannelType,
+  ModalBuilder,
+  PermissionFlagsBits,
+  TextInputBuilder,
+  TextInputStyle
+} = require("discord.js");
 
 const Application = require("../models/Application");
 const Ticket = require("../models/Ticket");
@@ -16,16 +25,57 @@ const { createTicketChannel, getNextTicketNumberFromGuild } = require("./tickets
 
 function createRecruitmentPanel() {
   const embed = createBaseEmbed({
-    title: "Recrutement Societa Ombra",
-    description: "Lance une candidature serieuse et detaillee. Ton dossier sera envoye a l'equipe staff.",
+    title: "Portail de recrutement Ombra",
+    description:
+      "Lance une candidature sérieuse et complète via le portail sécurisé.\nUne fois le questionnaire finalisé, OmbraCore ouvre automatiquement ton ticket recrutement avec l’intégralité des réponses.",
     color: 0x2a2415
   });
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(APPLICATION_OPEN).setLabel("Envoyer ma candidature").setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId(APPLICATION_OPEN).setLabel("Commencer la procédure").setStyle(ButtonStyle.Success)
   );
 
   return { embeds: [embed], components: [row] };
+}
+
+function getRecruitmentPortalUrl() {
+  const baseUrl = process.env.WEB_BASE_URL || "https://societa.univers-bot.fr";
+  return `${baseUrl.replace(/\/$/, "")}/recruitment`;
+}
+
+function createRecruitmentPortalPayload() {
+  const introEmbed = createBaseEmbed({
+    title: "Portail de recrutement sécurisé",
+    description:
+      "Le recrutement complet se déroule désormais sur le portail OmbraCore.\nConnecte-toi avec Discord, remplis l’intégralité du questionnaire, puis le ticket recrutement sera créé automatiquement avec ton dossier déjà injecté pour le staff.",
+    fields: [
+      { name: "Étape 1", value: "Connexion Discord sur le portail", inline: true },
+      { name: "Étape 2", value: "Formulaire complet et structuré", inline: true },
+      { name: "Étape 3", value: "Création automatique du ticket", inline: true }
+    ],
+    color: 0x171310
+  });
+
+  const detailEmbed = createBaseEmbed({
+    title: "Traitement du dossier",
+    description:
+      "Aucune réponse n’est perdue. Le bot construit ensuite un salon privé dédié avec tes réponses, la référence du dossier et les actions staff prêtes à l’emploi.",
+    fields: [
+      { name: "Accès", value: "Portail privé relié à ton compte Discord.", inline: true },
+      { name: "Confidentialité", value: "Lecture staff uniquement dans le ticket.", inline: true },
+      { name: "Résultat", value: "Ticket recrutement créé à la fin du formulaire.", inline: true }
+    ],
+    color: 0x1d1815
+  });
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel("Accéder au portail recrutement")
+      .setStyle(ButtonStyle.Link)
+      .setURL(getRecruitmentPortalUrl())
+  );
+
+  return { embeds: [introEmbed, detailEmbed], components: [row] };
 }
 
 function createRecruitmentModal(config) {
@@ -98,6 +148,99 @@ function createRecruitmentTicketModal() {
   return modal;
 }
 
+function createApplicationReviewRow(applicationId) {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`${APPLICATION_REVIEW_PREFIX}${applicationId}:accepted`)
+      .setLabel("Accepter")
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId(`${APPLICATION_REVIEW_PREFIX}${applicationId}:refused`)
+      .setLabel("Refuser")
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId(`${APPLICATION_REVIEW_PREFIX}${applicationId}:on_hold`)
+      .setLabel("En attente")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`${APPLICATION_CONTACT_PREFIX}${applicationId}`)
+      .setLabel("Contacter")
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`${APPLICATION_INTERVIEW_PREFIX}${applicationId}`)
+      .setLabel("Entretien")
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
+function createRecruitmentSubmissionEmbeds({ userMention, ticketNumber, typeLabel, score, answers, sourceLabel }) {
+  const coverEmbed = createBaseEmbed({
+    title: "Dossier de recrutement • Società Ombra",
+    description:
+      `${userMention}, ton dossier a été enregistré et transmis dans un salon privé.\nChaque réponse a été structurée automatiquement par OmbraCore pour une lecture propre par le staff.`,
+    fields: [
+      { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
+      { name: "Motif", value: typeLabel, inline: true },
+      { name: "Évaluation", value: `Score initial ${score}`, inline: true },
+      { name: "Source", value: sourceLabel, inline: true }
+    ],
+    color: 0x16120f
+  });
+
+  const sectionEmbeds = answers.map((item) =>
+    createBaseEmbed({
+      title: item.question,
+      description: item.answer.slice(0, 4096),
+      color: 0x1c1a18
+    })
+  );
+
+  return [coverEmbed, ...sectionEmbeds];
+}
+
+async function dispatchRecruitmentSubmission({
+  guild,
+  member,
+  client,
+  application,
+  answers,
+  score,
+  sourceLabel
+}) {
+  const config = client.runtimeConfig;
+  const { existingTicket, existingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
+    guild,
+    config,
+    member.user,
+    "recruitment"
+  );
+
+  if (existingTicket) {
+    return { existingTicket, existingChannel };
+  }
+
+  const embeds = createRecruitmentSubmissionEmbeds({
+    userMention: `${member}`,
+    ticketNumber,
+    typeLabel: typeConfig.label,
+    score,
+    answers,
+    sourceLabel
+  });
+  const reviewRow = createApplicationReviewRow(application.id);
+
+  await channel.send({ embeds, components: [reviewRow] });
+
+  if (config.channels?.applicationsLog) {
+    const logChannel = await guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
+    if (logChannel?.isTextBased()) {
+      await logChannel.send({ embeds, components: [reviewRow] });
+    }
+  }
+
+  return { channel, ticketNumber, typeConfig, embeds };
+}
+
 async function submitApplication(interaction, client) {
   const config = client.runtimeConfig;
   const profile = await UserProfile.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
@@ -133,13 +276,7 @@ async function submitApplication(interaction, client) {
     color: 0xc9a227
   });
 
-  const reviewRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:accepted`).setLabel("Accepter").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:refused`).setLabel("Refuser").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:on_hold`).setLabel("En attente").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${APPLICATION_CONTACT_PREFIX}${application.id}`).setLabel("Contacter").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`${APPLICATION_INTERVIEW_PREFIX}${application.id}`).setLabel("Ouvrir entretien").setStyle(ButtonStyle.Secondary)
-  );
+  const reviewRow = createApplicationReviewRow(application.id);
 
   if (config.channels?.applicationsLog) {
     const channel = await interaction.guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
@@ -276,12 +413,15 @@ async function submitRecruitmentTicketForm(interaction, client) {
     score
   });
 
-  const { existingTicket, existingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
-    interaction.guild,
-    config,
-    interaction.user,
-    "recruitment"
-  );
+  const { existingTicket, existingChannel, ticketNumber, channel } = await dispatchRecruitmentSubmission({
+    guild: interaction.guild,
+    member: interaction.member,
+    client,
+    application,
+    answers: sections.map((section) => ({ question: section.name, answer: section.answer })),
+    score,
+    sourceLabel: "Formulaire Discord"
+  });
 
   if (existingTicket) {
     await interaction.reply({
@@ -289,43 +429,6 @@ async function submitRecruitmentTicketForm(interaction, client) {
       ephemeral: true
     });
     return;
-  }
-
-  const coverEmbed = createBaseEmbed({
-    title: "Dossier de recrutement • Società Ombra",
-    description:
-      `${interaction.user}, ton dossier a été enregistré et transmis dans un salon privé.\nChaque réponse sera examinée avec attention par l’équipe concernée.`,
-    fields: [
-      { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
-      { name: "Motif", value: typeConfig.label, inline: true },
-      { name: "Évaluation", value: `Score initial ${score}`, inline: true }
-    ],
-    color: 0x16120f
-  });
-
-  const sectionsEmbeds = sections.map((section) =>
-    createBaseEmbed({
-      title: section.name,
-      description: section.answer.slice(0, 4096),
-      color: 0x1c1a18
-    })
-  );
-
-  const reviewRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:accepted`).setLabel("Accepter").setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:refused`).setLabel("Refuser").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:on_hold`).setLabel("En attente").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(`${APPLICATION_CONTACT_PREFIX}${application.id}`).setLabel("Contacter").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(`${APPLICATION_INTERVIEW_PREFIX}${application.id}`).setLabel("Entretien").setStyle(ButtonStyle.Secondary)
-  );
-
-  await channel.send({ embeds: [coverEmbed, ...sectionsEmbeds], components: [reviewRow] });
-
-  if (config.channels?.applicationsLog) {
-    const logChannel = await interaction.guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
-    if (logChannel?.isTextBased()) {
-      await logChannel.send({ embeds: [coverEmbed, ...sectionsEmbeds], components: [reviewRow] });
-    }
   }
 
   await sendLog(
@@ -343,6 +446,8 @@ module.exports = {
   createRecruitmentPanel,
   createRecruitmentModal,
   createRecruitmentTicketModal,
+  createRecruitmentPortalPayload,
+  dispatchRecruitmentSubmission,
   submitApplication,
   submitRecruitmentTicketForm,
   reviewApplication,

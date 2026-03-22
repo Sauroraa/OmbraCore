@@ -148,6 +148,15 @@ async function createTicket(interaction, client, selectedType) {
     return;
   }
 
+  if (selectedType === "recruitment") {
+    const { createRecruitmentPortalPayload } = require("./recruitment");
+    await interaction.reply({
+      ...createRecruitmentPortalPayload(),
+      ephemeral: true
+    });
+    return;
+  }
+
   const { existingTicket, existingChannel, ticketNumber, channel } = await createTicketChannel(
     interaction.guild,
     config,

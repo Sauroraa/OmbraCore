@@ -2,8 +2,7 @@ const crypto = require("node:crypto");
 
 const Application = require("../models/Application");
 const UserProfile = require("../models/UserProfile");
-const { createBaseEmbed } = require("../utils/embeds");
-const { createTicketChannel } = require("../modules/tickets");
+const { dispatchRecruitmentSubmission } = require("../modules/recruitment");
 const { renderRecruitmentPage } = require("./recruitmentPage");
 
 const FORM_DEFINITION = [
@@ -153,44 +152,18 @@ function registerRecruitmentRoutes(app, client) {
         score
       });
 
-      const { existingTicket, existingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
+      const { existingTicket, existingChannel, ticketNumber } = await dispatchRecruitmentSubmission({
         guild,
-        client.runtimeConfig,
-        member.user,
-        "recruitment"
-      );
+        member,
+        client,
+        application,
+        answers,
+        score,
+        sourceLabel: "Portail web"
+      });
 
       if (existingTicket) {
         throw new Error(existingChannel ? `Tu as déjà un ticket recrutement ouvert : #${existingChannel.name}` : "Tu as déjà un ticket recrutement ouvert.");
-      }
-
-      const summaryEmbed = createBaseEmbed({
-        title: "Dossier de recrutement • Portail Ombra",
-        description:
-          `${member} a transmis son formulaire complet via le portail sécurisé.\nToutes les réponses ont été injectées automatiquement dans ce dossier privé.`,
-        fields: [
-          { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
-          { name: "Motif", value: typeConfig.label, inline: true },
-          { name: "Score initial", value: `${score}`, inline: true }
-        ],
-        color: 0x18130f
-      });
-
-      const sectionEmbeds = answers.map((item) =>
-        createBaseEmbed({
-          title: item.question,
-          description: item.answer.slice(0, 4096),
-          color: 0x1d1a18
-        })
-      );
-
-      await channel.send({ embeds: [summaryEmbed, ...sectionEmbeds] });
-
-      if (client.runtimeConfig.channels?.applicationsLog) {
-        const logChannel = await guild.channels.fetch(client.runtimeConfig.channels.applicationsLog).catch(() => null);
-        if (logChannel?.isTextBased()) {
-          await logChannel.send({ embeds: [summaryEmbed, ...sectionEmbeds] });
-        }
       }
 
       await member.send(`Ton dossier Società Ombra a bien été transmis. Référence : #${String(ticketNumber).padStart(4, "0")}`).catch(() => null);

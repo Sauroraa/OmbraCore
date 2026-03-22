@@ -18,8 +18,7 @@ const {
 const {
   contactApplicant,
   createInterviewTicket,
-  createRecruitmentModal,
-  createRecruitmentTicketModal,
+  createRecruitmentPortalPayload,
   reviewApplication,
   submitApplication,
   submitRecruitmentTicketForm
@@ -92,7 +91,10 @@ module.exports = {
       }
 
       if (interaction.customId === APPLICATION_OPEN) {
-        await interaction.showModal(createRecruitmentModal(client.runtimeConfig));
+        await interaction.reply({
+          ...createRecruitmentPortalPayload(),
+          ephemeral: true
+        });
         return;
       }
 
@@ -114,11 +116,6 @@ module.exports = {
     }
 
     if (interaction.isStringSelectMenu() && interaction.customId === TICKET_SELECT) {
-      if (interaction.values[0] === "recruitment") {
-        await interaction.showModal(createRecruitmentTicketModal());
-        return;
-      }
-
       await createTicket(interaction, client, interaction.values[0]);
       return;
     }
