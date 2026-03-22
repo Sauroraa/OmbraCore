@@ -12,7 +12,7 @@ const {
   applyApplicationStatus,
   scheduleApplicationInterview
 } = require("../services/recruitmentDecisionService");
-const { renderRecruitmentPage } = require("./recruitmentPage");
+const { renderRecruitmentPage, renderCandidateDetailPage } = require("./recruitmentPage");
 
 const ADMIN_USER_IDS = new Set(["976309113749372958", "780527561175597067"]);
 
@@ -228,20 +228,38 @@ function registerRecruitmentRoutes(app, client) {
     res.type("html").send(renderRecruitmentPage(state));
   });
 
-  app.get("/admin/recruitment/:applicationId", async (req, res) => {
+  app.get("/candidature/:token", async (req, res) => {
     const user = readSession(req);
-    if (!isAdminUser(user)) {
-      res.redirect("/recruitment");
+    if (!user) {
+      res.redirect("/recruitment/login");
       return;
     }
 
-    const state = await buildPortalState(client, user, "admin_detail", false, req.params.applicationId);
-    if (!state.portal?.selectedApplication) {
-      res.redirect("/admin");
+    const application = await Application.findOne({ guildId: process.env.GUILD_ID, portalToken: req.params.token }).lean();
+    if (!application) {
+      res.type("html").status(404).send(renderCandidateDetailPage({ error: "Le dossier demandé est introuvable." }));
       return;
     }
 
-    res.type("html").send(renderRecruitmentPage(state));
+    const canAccess = isAdminUser(user) || user.id === application.userId;
+    if (!canAccess) {
+      res.type("html").status(403).send(renderCandidateDetailPage({ error: "Accès refusé à ce dossier." }));
+      return;
+    }
+
+    const serialized = serializeApplication(application);
+    const owner = await client.users.fetch(application.userId).catch(() => null);
+    res.type("html").send(
+      renderCandidateDetailPage({
+        baseUrl: getBaseUrl(),
+        viewer: user,
+        application: {
+          ...serialized,
+          portalToken: application.portalToken
+        },
+        ownerTag: owner ? owner.tag : `Utilisateur ${application.userId}`
+      })
+    );
   });
 
   app.get("/recruitment/login", async (req, res) => {
@@ -636,10 +654,9 @@ function evaluateQuiz(body) {
   }, 0);
 }
 
-async function buildPortalState(client, user, requestedView, submitted, selectedApplicationId = null) {
+async function buildPortalState(client, user, requestedView, submitted) {
   const baseUrl = getBaseUrl();
   const portal = {
-    guildId: process.env.GUILD_ID || null,
     latestApplication: null,
     latestRecruitmentTicket: null,
     rulesAccepted: false,
@@ -647,8 +664,7 @@ async function buildPortalState(client, user, requestedView, submitted, selected
     recruitmentLocked: false,
     lockReason: null,
     isAdmin: isAdminUser(user),
-    adminApplications: [],
-    selectedApplication: null
+    adminApplications: []
   };
 
   if (user) {
@@ -661,15 +677,10 @@ async function buildPortalState(client, user, requestedView, submitted, selected
     ];
 
     if (portal.isAdmin) {
-      queries.push(Application.find({ guildId, adminHidden: { $ne: true } }).sort({ createdAt: -1 }).limit(50).lean());
-      queries.push(
-        selectedApplicationId
-          ? Application.findOne({ guildId, _id: selectedApplicationId, adminHidden: { $ne: true } }).lean()
-          : Promise.resolve(null)
-      );
+      queries.push(Application.find({ guildId, adminHidden: { $ne: true } }).sort({ createdAt: -1 }).limit(50));
     }
 
-    const [profile, application, ticket, lockedApplication, adminApplications = [], selectedApplication = null] = await Promise.all(queries);
+    const [profile, application, ticket, lockedApplication, adminApplications = []] = await Promise.all(queries);
 
     portal.rulesAccepted = Boolean(profile?.rulesAcceptedAt);
     portal.rulesAcceptedAt = profile?.rulesAcceptedAt || null;
@@ -680,7 +691,6 @@ async function buildPortalState(client, user, requestedView, submitted, selected
     portal.adminApplications = portal.isAdmin
       ? await serializeAdminApplications(client, adminApplications)
       : [];
-    portal.selectedApplication = portal.isAdmin ? await serializeAdminApplicationDetail(client, selectedApplication) : null;
   }
 
   return {
@@ -693,7 +703,7 @@ async function buildPortalState(client, user, requestedView, submitted, selected
 }
 
 function resolveInitialView({ requestedView, submitted, user, portal }) {
-  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation", "admin", "admin_detail"]);
+  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation", "admin"]);
 
   if (requestedView && allowedViews.has(requestedView)) {
     return requestedView;
@@ -709,10 +719,6 @@ function resolveInitialView({ requestedView, submitted, user, portal }) {
 
   if (requestedView === "admin" && portal.isAdmin) {
     return "admin";
-  }
-
-  if (requestedView === "admin_detail" && portal.isAdmin && portal.selectedApplication) {
-    return "admin_detail";
   }
 
   if (portal.recruitmentLocked || portal.latestApplication) {
@@ -749,6 +755,8 @@ function serializeApplication(application) {
     hiddenAt: application.hiddenAt || null,
     score: application.score || 0,
     quizScore: application.quizScore || 0,
+    portalToken: application.portalToken || null,
+    dossierUrl: application.portalToken ? `${getBaseUrl()}/candidature/${application.portalToken}` : null,
     ageIrl: application.ageIrl || null,
     notes: application.notes || "",
     autoRefused: Boolean(application.autoRefused),
@@ -765,6 +773,11 @@ function serializeApplication(application) {
 async function serializeAdminApplications(client, applications) {
   return Promise.all(
     applications.map(async (application) => {
+      if (!application.portalToken) {
+        application.portalToken = crypto.randomBytes(18).toString("hex");
+        await application.save();
+      }
+
       const serialized = serializeApplication(application);
       const user = await client.users.fetch(application.userId).catch(() => null);
 
@@ -776,31 +789,6 @@ async function serializeAdminApplications(client, applications) {
       };
     })
   );
-}
-
-async function serializeAdminApplicationDetail(client, application) {
-  if (!application) {
-    return null;
-  }
-
-  const serialized = serializeApplication(application);
-  const user = await client.users.fetch(application.userId).catch(() => null);
-  const ticket = await Ticket.findOne({
-    guildId: application.guildId,
-    authorId: application.userId,
-    type: "recruitment",
-    status: { $ne: "deleted" }
-  })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  return {
-    ...serialized,
-    userId: application.userId,
-    userTag: user ? user.tag : `Utilisateur ${application.userId}`,
-    username: user?.username || application.userId,
-    ticket: serializeTicket(ticket)
-  };
 }
 
 function serializeTicket(ticket) {

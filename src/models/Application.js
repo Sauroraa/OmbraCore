@@ -23,6 +23,7 @@ const applicationSchema = new mongoose.Schema(
     },
     interviewScheduledFor: { type: Date, default: null },
     interviewMessage: { type: String, default: "" },
+    portalToken: { type: String, default: null, index: true, unique: true, sparse: true },
     adminHidden: { type: Boolean, default: false },
     hiddenAt: { type: Date, default: null },
     reviewedBy: { type: String, default: null },
