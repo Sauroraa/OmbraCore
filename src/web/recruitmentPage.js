@@ -136,6 +136,7 @@ function renderRecruitmentPage({
             <div className='top-actions'>
               <button type='button' className='btn primary' onClick={() => setView('form')}>Reprendre le formulaire</button>
               <button type='button' className='btn' onClick={() => setView('status')}>Voir le statut</button>
+              {!app && progress.complete > 0 ? <button type='button' className='btn danger' onClick={clearDraft}>Supprimer le brouillon</button> : null}
             </div>
           </div>
         </div>
@@ -188,9 +189,9 @@ function renderRecruitmentPage({
           <form action={submitUrl} method='POST'>
             {Object.entries(draft).map(([key, value]) => <input key={key} type='hidden' name={key} value={value} />)}
             <div className='footer-actions'>
-              <p>Le formulaire est structuré en sections simples. Une fois soumis, OmbraCore transmet le dossier vers le ticket recrutement Discord.</p>
+              <p>Le formulaire est structuré en sections simples. Tant qu’il n’est pas envoyé, tu peux supprimer le brouillon et repartir de zéro. Une fois soumis, OmbraCore crée automatiquement le ticket recrutement sur Discord.</p>
               <div className='top-actions'>
-                <button type='button' className='btn ghost' onClick={clearDraft}>Réinitialiser</button>
+                <button type='button' className='btn danger' onClick={clearDraft}>Supprimer le brouillon</button>
                 <button type='submit' className='btn primary' disabled={!state.user || !rulesAccepted}>Soumettre la candidature</button>
               </div>
             </div>
@@ -235,11 +236,11 @@ function renderRecruitmentPage({
             </div>
             {state.error ? <div className='alert error'>{state.error}</div> : null}
             {state.submitted ? <div className='alert success'>Votre dossier a été transmis avec succès et injecté dans le circuit interne.</div> : null}
-            {view === 'home' && <HomeView />}
-            {view === 'access' && <AccessView />}
-            {view === 'dossier' && <DossierView />}
-            {view === 'form' && <FormView />}
-            {view === 'status' && <StatusView />}
+            {view === 'home' ? HomeView() : null}
+            {view === 'access' ? AccessView() : null}
+            {view === 'dossier' ? DossierView() : null}
+            {view === 'form' ? FormView() : null}
+            {view === 'status' ? StatusView() : null}
           </main>
         </div>
       );
