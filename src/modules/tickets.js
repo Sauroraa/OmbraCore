@@ -71,6 +71,66 @@ async function getNextTicketNumberFromGuild(guildId) {
   return latestTicket ? latestTicket.ticketNumber + 1 : 1;
 }
 
+async function createTicketChannel(guild, config, user, selectedType) {
+  const typeConfig = config.tickets?.types?.[selectedType];
+
+  if (!typeConfig) {
+    throw new Error("Invalid ticket type.");
+  }
+
+  const existingTicket = await Ticket.findOne({
+    guildId: guild.id,
+    authorId: user.id,
+    type: selectedType,
+    status: "open"
+  });
+
+  if (existingTicket) {
+    const existingChannel = await guild.channels.fetch(existingTicket.channelId).catch(() => null);
+    return { existingTicket, existingChannel, typeConfig };
+  }
+
+  const ticketNumber = await getNextTicketNumberFromGuild(guild.id);
+  const channelName = `ticket-${String(ticketNumber).padStart(4, "0")}`;
+  const categoryId = typeConfig.categoryId || config.categories?.supportTickets || null;
+
+  const channel = await guild.channels.create({
+    name: channelName,
+    type: ChannelType.GuildText,
+    parent: categoryId || undefined,
+    permissionOverwrites: [
+      {
+        id: guild.roles.everyone.id,
+        deny: [PermissionFlagsBits.ViewChannel]
+      },
+      {
+        id: user.id,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+      },
+      ...(config.roles?.staff
+        ? [
+            {
+              id: config.roles.staff,
+              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
+            }
+          ]
+        : [])
+    ]
+  });
+
+  const ticket = await Ticket.create({
+    guildId: guild.id,
+    channelId: channel.id,
+    ticketNumber,
+    authorId: user.id,
+    type: selectedType,
+    priority: selectedType === "direction" ? "high" : "medium",
+    members: [user.id]
+  });
+
+  return { ticket, channel, ticketNumber, typeConfig };
+}
+
 async function buildTranscript(channel) {
   const messages = await channel.messages.fetch({ limit: 100 });
   return [...messages.values()]
@@ -88,59 +148,20 @@ async function createTicket(interaction, client, selectedType) {
     return;
   }
 
-  const existingTicket = await Ticket.findOne({
-    guildId: interaction.guild.id,
-    authorId: interaction.user.id,
-    type: selectedType,
-    status: "open"
-  });
+  const { existingTicket, existingChannel, ticketNumber, channel } = await createTicketChannel(
+    interaction.guild,
+    config,
+    interaction.user,
+    selectedType
+  );
 
   if (existingTicket) {
-    const existingChannel = await interaction.guild.channels.fetch(existingTicket.channelId).catch(() => null);
     await interaction.reply({
       content: existingChannel ? `Tu as deja un ticket ouvert pour ce motif : ${existingChannel}.` : "Tu as deja un ticket ouvert pour ce motif.",
       ephemeral: true
     });
     return;
   }
-
-  const ticketNumber = await getNextTicketNumberFromGuild(interaction.guild.id);
-  const channelName = `ticket-${String(ticketNumber).padStart(4, "0")}`;
-  const categoryId = typeConfig.categoryId || config.categories?.supportTickets || null;
-
-  const channel = await interaction.guild.channels.create({
-    name: channelName,
-    type: ChannelType.GuildText,
-    parent: categoryId || undefined,
-    permissionOverwrites: [
-      {
-        id: interaction.guild.roles.everyone.id,
-        deny: [PermissionFlagsBits.ViewChannel]
-      },
-      {
-        id: interaction.user.id,
-        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-      },
-      ...(config.roles?.staff
-        ? [
-            {
-              id: config.roles.staff,
-              allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory]
-            }
-          ]
-        : [])
-    ]
-  });
-
-  await Ticket.create({
-    guildId: interaction.guild.id,
-    channelId: channel.id,
-    ticketNumber,
-    authorId: interaction.user.id,
-    type: selectedType,
-    priority: selectedType === "direction" ? "high" : "medium",
-    members: [interaction.user.id]
-  });
 
   const embed = createBaseEmbed({
     title: "Bureau de liaison • Dossier actif",
@@ -380,6 +401,7 @@ async function updateTicketMember(interaction, action) {
 module.exports = {
   createTicketPanel,
   createTicket,
+  createTicketChannel,
   claimTicket,
   closeTicket,
   confirmCloseTicket,

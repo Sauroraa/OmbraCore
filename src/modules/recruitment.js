@@ -7,11 +7,12 @@ const {
   APPLICATION_CONTACT_PREFIX,
   APPLICATION_INTERVIEW_PREFIX,
   APPLICATION_OPEN,
-  APPLICATION_REVIEW_PREFIX
+  APPLICATION_REVIEW_PREFIX,
+  TICKET_RECRUITMENT_FORM
 } = require("../constants/customIds");
 const { createBaseEmbed } = require("../utils/embeds");
 const { sendLog } = require("../services/logService");
-const { getNextTicketNumberFromGuild } = require("./tickets");
+const { createTicketChannel, getNextTicketNumberFromGuild } = require("./tickets");
 
 function createRecruitmentPanel() {
   const embed = createBaseEmbed({
@@ -44,6 +45,55 @@ function createRecruitmentModal(config) {
       )
     );
   }
+
+  return modal;
+}
+
+function createRecruitmentTicketModal() {
+  const modal = new ModalBuilder().setCustomId(TICKET_RECRUITMENT_FORM).setTitle("Formulaire Recrutement Ombra");
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("recruitment_identity")
+        .setLabel("Identité RP")
+        .setPlaceholder("Nom RP | Prénom RP | Âge RP | Origine | Profession RP")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("recruitment_player_profile")
+        .setLabel("Profil joueur")
+        .setPlaceholder("Âge IRL | Pseudo Discord | Temps en RP | Serveurs précédents | Expérience criminelle")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("recruitment_experience")
+        .setLabel("Expérience RP")
+        .setPlaceholder("RP sérieux | Rôle important | Réaction en tension | Exemple de scène vécue")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("recruitment_motivation")
+        .setLabel("Motivation")
+        .setPlaceholder("Pourquoi Ombra | Ce qui t’attire | Ce que tu apportes | Pourquoi toi")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+    ),
+    new ActionRowBuilder().addComponents(
+      new TextInputBuilder()
+        .setCustomId("recruitment_commitment")
+        .setLabel("Comportement et engagement")
+        .setPlaceholder("Sanctions | Gestion des conflits | Hiérarchie | Disponibilités | Confidentialité | Mise en situation")
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true)
+    )
+  );
 
   return modal;
 }
@@ -200,10 +250,101 @@ async function createInterviewTicket(interaction, client) {
   await interaction.reply({ content: `Salon d'entretien cree : ${channel}`, ephemeral: true });
 }
 
+async function submitRecruitmentTicketForm(interaction, client) {
+  const config = client.runtimeConfig;
+  const profile = await UserProfile.findOne({ guildId: interaction.guild.id, userId: interaction.user.id });
+
+  if (!profile?.rulesAcceptedAt) {
+    await interaction.reply({ content: "Tu dois accepter le règlement avant de déposer une candidature.", ephemeral: true });
+    return;
+  }
+
+  const sections = [
+    { name: "Informations personnelles", answer: interaction.fields.getTextInputValue("recruitment_identity") },
+    { name: "Profil joueur", answer: interaction.fields.getTextInputValue("recruitment_player_profile") },
+    { name: "Expérience RP", answer: interaction.fields.getTextInputValue("recruitment_experience") },
+    { name: "Motivation", answer: interaction.fields.getTextInputValue("recruitment_motivation") },
+    { name: "Comportement et engagement", answer: interaction.fields.getTextInputValue("recruitment_commitment") }
+  ];
+
+  const score = sections.reduce((total, item) => total + Math.min(item.answer.length, 250), 0);
+
+  const application = await Application.create({
+    guildId: interaction.guild.id,
+    userId: interaction.user.id,
+    answers: sections.map((section) => ({ question: section.name, answer: section.answer })),
+    score
+  });
+
+  const { existingTicket, existingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
+    interaction.guild,
+    config,
+    interaction.user,
+    "recruitment"
+  );
+
+  if (existingTicket) {
+    await interaction.reply({
+      content: existingChannel ? `Tu as déjà un ticket recrutement ouvert : ${existingChannel}.` : "Tu as déjà un ticket recrutement ouvert.",
+      ephemeral: true
+    });
+    return;
+  }
+
+  const coverEmbed = createBaseEmbed({
+    title: "Dossier de recrutement • Società Ombra",
+    description:
+      `${interaction.user}, ton dossier a été enregistré et transmis dans un salon privé.\nChaque réponse sera examinée avec attention par l’équipe concernée.`,
+    fields: [
+      { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
+      { name: "Motif", value: typeConfig.label, inline: true },
+      { name: "Évaluation", value: `Score initial ${score}`, inline: true }
+    ],
+    color: 0x16120f
+  });
+
+  const sectionsEmbeds = sections.map((section) =>
+    createBaseEmbed({
+      title: section.name,
+      description: section.answer.slice(0, 4096),
+      color: 0x1c1a18
+    })
+  );
+
+  const reviewRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:accepted`).setLabel("Accepter").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:refused`).setLabel("Refuser").setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(`${APPLICATION_REVIEW_PREFIX}${application.id}:on_hold`).setLabel("En attente").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`${APPLICATION_CONTACT_PREFIX}${application.id}`).setLabel("Contacter").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`${APPLICATION_INTERVIEW_PREFIX}${application.id}`).setLabel("Entretien").setStyle(ButtonStyle.Secondary)
+  );
+
+  await channel.send({ embeds: [coverEmbed, ...sectionsEmbeds], components: [reviewRow] });
+
+  if (config.channels?.applicationsLog) {
+    const logChannel = await interaction.guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
+    if (logChannel?.isTextBased()) {
+      await logChannel.send({ embeds: [coverEmbed, ...sectionsEmbeds], components: [reviewRow] });
+    }
+  }
+
+  await sendLog(
+    interaction.guild,
+    config.channels?.applicationsLog,
+    "Ticket recrutement créé",
+    `${interaction.user.tag} a soumis un recrutement complet avant ouverture du ticket.`,
+    [{ name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true }]
+  );
+
+  await interaction.reply({ content: `Dossier enregistré. Ton ticket recrutement est prêt : ${channel}`, ephemeral: true });
+}
+
 module.exports = {
   createRecruitmentPanel,
   createRecruitmentModal,
+  createRecruitmentTicketModal,
   submitApplication,
+  submitRecruitmentTicketForm,
   reviewApplication,
   contactApplicant,
   createInterviewTicket

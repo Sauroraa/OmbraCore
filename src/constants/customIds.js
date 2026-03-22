@@ -9,6 +9,7 @@ module.exports = {
   TICKET_TRANSCRIPT: "ticket:transcript",
   TICKET_MEMBER_ADD: "ticket:member:add",
   TICKET_MEMBER_REMOVE: "ticket:member:remove",
+  TICKET_RECRUITMENT_FORM: "ticket:recruitment:form",
   APPLICATION_OPEN: "recruitment:start",
   APPLICATION_REVIEW_PREFIX: "application:review:",
   APPLICATION_CONTACT_PREFIX: "application:contact:",

@@ -11,10 +11,19 @@ const {
   TICKET_DELETE,
   TICKET_MEMBER_ADD,
   TICKET_MEMBER_REMOVE,
+  TICKET_RECRUITMENT_FORM,
   TICKET_SELECT,
   TICKET_TRANSCRIPT
 } = require("../constants/customIds");
-const { contactApplicant, createInterviewTicket, createRecruitmentModal, reviewApplication, submitApplication } = require("../modules/recruitment");
+const {
+  contactApplicant,
+  createInterviewTicket,
+  createRecruitmentModal,
+  createRecruitmentTicketModal,
+  reviewApplication,
+  submitApplication,
+  submitRecruitmentTicketForm
+} = require("../modules/recruitment");
 const { acceptRules } = require("../modules/rules");
 const {
   claimTicket,
@@ -105,6 +114,11 @@ module.exports = {
     }
 
     if (interaction.isStringSelectMenu() && interaction.customId === TICKET_SELECT) {
+      if (interaction.values[0] === "recruitment") {
+        await interaction.showModal(createRecruitmentTicketModal());
+        return;
+      }
+
       await createTicket(interaction, client, interaction.values[0]);
       return;
     }
@@ -112,6 +126,11 @@ module.exports = {
     if (interaction.isModalSubmit()) {
       if (interaction.customId === APPLICATION_OPEN) {
         await submitApplication(interaction, client);
+        return;
+      }
+
+      if (interaction.customId === TICKET_RECRUITMENT_FORM) {
+        await submitRecruitmentTicketForm(interaction, client);
         return;
       }
 
