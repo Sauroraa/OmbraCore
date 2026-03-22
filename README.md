@@ -70,6 +70,16 @@ cp .env.production.example .env
 docker compose up -d --build
 ```
 
+## Deploiement Natif Debian 12
+
+Si ton serveur est un LXC unprivileged, utilise le mode natif :
+
+```bash
+chmod +x scripts/setup-native-mongodb-debian12.sh scripts/redeploy-native.sh
+sudo ./scripts/setup-native-mongodb-debian12.sh /home/OmbreCore
+./scripts/redeploy-native.sh /home/OmbreCore
+```
+
 ## Variables d'environnement
 
 ```env
