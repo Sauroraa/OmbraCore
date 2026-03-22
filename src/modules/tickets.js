@@ -22,7 +22,7 @@ const {
   TICKET_TRANSCRIPT
 } = require("../constants/customIds");
 const { createBaseEmbed } = require("../utils/embeds");
-const { sendLog } = require("../services/logService");
+const { FIXED_LOG_CHANNEL_ID, sendLog } = require("../services/logService");
 const { addMemberToTicket, getActiveTicketByChannel, removeMemberFromTicket } = require("../services/ticketService");
 
 function createTicketPanel(config) {
@@ -204,7 +204,8 @@ async function createTicket(interaction, client, selectedType) {
     config.channels?.ticketsLog,
     "Ticket ouvert",
     `Ticket #${ticketNumber} cree par ${interaction.user.tag}.`,
-    [{ name: "Type", value: typeConfig.label, inline: true }]
+    [{ name: "Type", value: typeConfig.label, inline: true }],
+    { category: "ticket", level: "success" }
   );
 
   await interaction.reply({ content: `Ticket cree : ${channel}`, ephemeral: true });
@@ -252,7 +253,8 @@ async function claimTicket(interaction, client) {
     client.runtimeConfig.channels?.ticketsLog,
     "Ticket pris en charge",
     `Le ticket #${ticket.ticketNumber} est maintenant gere par ${interaction.user.tag}.`,
-    [{ name: "Temps de reponse", value: `${responseMinutes} minute(s)`, inline: true }]
+    [{ name: "Temps de reponse", value: `${responseMinutes} minute(s)`, inline: true }],
+    { category: "ticket", level: "info" }
   );
 }
 
@@ -291,7 +293,14 @@ async function confirmCloseTicket(interaction, client) {
     await interaction.channel.setParent(client.runtimeConfig.tickets.closeArchiveCategoryId).catch(() => null);
   }
 
-  await sendLog(interaction.guild, client.runtimeConfig.channels?.ticketsLog, "Ticket ferme", `Le ticket #${ticket.ticketNumber} a ete ferme par ${interaction.user.tag}.`);
+  await sendLog(
+    interaction.guild,
+    client.runtimeConfig.channels?.ticketsLog,
+    "Ticket ferme",
+    `Le ticket #${ticket.ticketNumber} a ete ferme par ${interaction.user.tag}.`,
+    [],
+    { category: "ticket", level: "warning" }
+  );
   const closedEmbed = createBaseEmbed({
     title: "Dossier clôturé",
     description: "Le traitement actif est terminé.\nLe salon peut désormais être archivé ou supprimé selon le besoin du staff.",
@@ -318,10 +327,11 @@ async function deleteTicket(interaction, client) {
     logChannel,
     "Ticket supprime",
     `Le ticket #${ticket.ticketNumber} a ete supprime par ${interaction.user.tag}.`,
-    [{ name: "Type", value: ticket.type, inline: true }]
+    [{ name: "Type", value: ticket.type, inline: true }],
+    { category: "ticket", level: "warning" }
   );
-  if (logChannel) {
-    const channel = await interaction.guild.channels.fetch(logChannel).catch(() => null);
+  {
+    const channel = await interaction.guild.channels.fetch(FIXED_LOG_CHANNEL_ID).catch(() => null);
     if (channel?.isTextBased() && transcript.trim()) {
       await channel.send({
         files: [{ attachment: Buffer.from(transcript, "utf8"), name: `transcript-ticket-${ticket.ticketNumber}.txt` }]

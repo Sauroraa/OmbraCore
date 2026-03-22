@@ -1,5 +1,6 @@
 const spamTracker = new Map();
 const recentMentions = new Map();
+const { sendLog } = require("../services/logService");
 
 function isUppercaseAbuse(content, threshold) {
   const letters = content.replace(/[^a-zA-Z]/g, "");
@@ -72,12 +73,19 @@ async function handleAutomod(message, client) {
   await message.delete().catch(() => null);
   await message.member.timeout((config.automod?.timeoutMinutes || 10) * 60 * 1000, reason).catch(() => null);
 
-  if (config.channels?.moderationLog) {
-    const channel = await message.guild.channels.fetch(config.channels.moderationLog).catch(() => null);
-    if (channel?.isTextBased()) {
-      await channel.send(`Automod: ${message.author.tag} | ${reason} | ${content.slice(0, 1500) || "[message vide]"}`);
-    }
-  }
+  await sendLog(
+    message.guild,
+    config.channels?.moderationLog,
+    "Automod déclenché",
+    `${message.author.tag} a été traité automatiquement par OmbraCore.`,
+    [
+      { name: "Raison", value: reason, inline: true },
+      { name: "Utilisateur", value: `${message.author}`, inline: true },
+      { name: "Salon", value: `${message.channel}`, inline: true },
+      { name: "Contenu", value: content.slice(0, 1024) || "[message vide]", inline: false }
+    ],
+    { category: "moderation", level: "warning" }
+  );
 }
 
 async function handleGhostPing(message, client) {
@@ -90,10 +98,17 @@ async function handleGhostPing(message, client) {
     return;
   }
 
-  const channel = await message.guild.channels.fetch(client.runtimeConfig.channels?.moderationLog).catch(() => null);
-  if (channel?.isTextBased()) {
-    await channel.send(`Ghost ping detecte: ${message.author.tag} a supprime un message avec mentions.`);
-  }
+  await sendLog(
+    message.guild,
+    client.runtimeConfig.channels?.moderationLog,
+    "Ghost ping détecté",
+    `${message.author.tag} a supprimé un message contenant des mentions.`,
+    [
+      { name: "Utilisateur", value: `${message.author}`, inline: true },
+      { name: "Salon", value: `${message.channel}`, inline: true }
+    ],
+    { category: "moderation", level: "warning" }
+  );
 }
 
 module.exports = { handleAutomod, handleGhostPing };

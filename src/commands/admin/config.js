@@ -9,16 +9,7 @@ const channelKeys = [
   "rules",
   "validation",
   "ticketPanel",
-  "recruitmentPanel",
-  "farewellLog",
-  "applicationsLog",
-  "joinLog",
-  "rulesLog",
-  "ticketsLog",
-  "anonymousLog",
-  "moderationLog",
-  "rolesLog",
-  "commandsLog"
+  "recruitmentPanel"
 ];
 
 const roleKeys = ["unverified", "member", "candidate", "partner", "guest", "staff", "recruiter", "moderator"];
@@ -202,10 +193,10 @@ module.exports = {
     if (subcommand === "show") {
       const content = [
         `Salons: welcome=${config.channels?.welcome || "non defini"} | rules=${config.channels?.rules || "non defini"} | tickets=${config.channels?.ticketPanel || "non defini"}`,
-        `Logs: join=${config.channels?.joinLog || "non defini"} | rules=${config.channels?.rulesLog || "non defini"} | tickets=${config.channels?.ticketsLog || "non defini"} | anon=${config.channels?.anonymousLog || "non defini"}`,
+        `Logs: centralises automatiquement vers 1485373295648964638`,
         `Roles: unverified=${config.roles?.unverified || "non defini"} | member=${config.roles?.member || "non defini"} | staff=${config.roles?.staff || "non defini"} | recruiter=${config.roles?.recruiter || "non defini"}`,
         `Automod: spam=${config.automod?.spamThreshold} | fenetre=${config.automod?.spamWindowMs}ms | mentions=${config.automod?.mentionThreshold} | caps=${config.automod?.capsThreshold} | timeout=${config.automod?.timeoutMinutes}min | ano=3s fixe`,
-        `Tickets: archive=${config.tickets?.closeArchiveCategoryId || "non defini"} | support=${config.tickets?.types?.support?.categoryId || "non defini"} | recruitment=${config.tickets?.types?.recruitment?.categoryId || "non defini"}`,
+        `Tickets: archive=${config.tickets?.closeArchiveCategoryId || "non defini"} | support=${config.tickets?.types?.support?.categoryId || "non defini"} | direction=${config.tickets?.types?.direction?.categoryId || "non defini"}`,
         `Branding: name=${config.brand?.name || "non defini"} | footer=${config.brand?.footer || "non defini"}`
       ].join("\n");
       await interaction.reply({ content, ephemeral: true });

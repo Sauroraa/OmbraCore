@@ -109,7 +109,8 @@ async function applyApplicationStatus({
       { name: "Candidat", value: user ? `${user.tag}` : `\`${application.userId}\``, inline: true },
       { name: "Statut", value: meta.label, inline: true },
       ...(note.trim() ? [{ name: "Note", value: note.trim().slice(0, 1024), inline: false }] : [])
-    ]
+    ],
+    { category: "recruitment", level: status === "accepted" ? "success" : status === "refused" ? "warning" : "info" }
   );
 
   return application;
@@ -170,7 +171,8 @@ async function scheduleApplicationInterview({
       { name: "Candidat", value: user ? `${user.tag}` : `\`${application.userId}\``, inline: true },
       { name: "Date", value: `<t:${unix}:F>`, inline: true },
       ...(note.trim() ? [{ name: "Instruction", value: note.trim().slice(0, 1024), inline: false }] : [])
-    ]
+    ],
+    { category: "recruitment", level: "info" }
   );
 
   return application;

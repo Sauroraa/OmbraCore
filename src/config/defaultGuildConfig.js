@@ -38,16 +38,7 @@ module.exports = {
     rules: "1485315733318668359",
     validation: "",
     ticketPanel: "1485333822210834452",
-    recruitmentPanel: "1485333822210834452",
-    farewellLog: "",
-    applicationsLog: "",
-    joinLog: "",
-    rulesLog: "",
-    ticketsLog: "",
-    anonymousLog: "",
-    moderationLog: "",
-    rolesLog: "",
-    commandsLog: ""
+    recruitmentPanel: "1485333822210834452"
   },
   categories: {
     supportTickets: "1485333181807984760",

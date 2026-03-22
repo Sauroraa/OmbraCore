@@ -12,6 +12,7 @@ const {
   applyApplicationStatus,
   scheduleApplicationInterview
 } = require("../services/recruitmentDecisionService");
+const { sendErrorLog, sendLog } = require("../services/logService");
 const { renderRecruitmentPage, renderCandidateDetailPage } = require("./recruitmentPage");
 
 const ADMIN_USER_IDS = new Set(["976309113749372958", "780527561175597067"]);
@@ -278,6 +279,15 @@ function registerRecruitmentRoutes(app, client) {
   app.get("/recruitment/callback", async (req, res) => {
     try {
       if (!req.query.code || !req.query.state || req.cookies.ombracore_oauth_state !== req.query.state) {
+        const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+        await sendLog(
+          guild,
+          null,
+          "OAuth refusé",
+          "Une tentative de callback OAuth invalide ou expirée a été détectée.",
+          [],
+          { category: "website", level: "warning", scope: "oauth.callback" }
+        );
         const state = await buildPortalState(client, null, "access", false);
         res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: "Connexion Discord invalide ou expirée." }));
         return;
@@ -315,8 +325,23 @@ function registerRecruitmentRoutes(app, client) {
         maxAge: 1000 * 60 * 60 * 8
       });
 
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendLog(
+        guild,
+        null,
+        "Connexion portail réussie",
+        `${user.username}#${user.discriminator || "0000"} a ouvert une session OmbraCore.`,
+        [{ name: "Utilisateur", value: `\`${user.id}\``, inline: true }],
+        { category: "website", level: "success", scope: "oauth.callback" }
+      );
+
       res.redirect("/recruitment");
-    } catch (_error) {
+    } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur OAuth portail", "La finalisation de la connexion Discord a échoué.", error, {
+        category: "website",
+        scope: "oauth.callback"
+      });
       const user = readSession(req);
       const state = await buildPortalState(client, user, "access", false);
       res.type("html").status(500).send(renderRecruitmentPage({ ...state, error: "Impossible de finaliser la connexion Discord." }));
@@ -423,6 +448,17 @@ function registerRecruitmentRoutes(app, client) {
         });
 
         await member.send("Ta candidature Società Ombra a été refusée automatiquement : l'âge IRL minimum requis est de 18 ans. Aucun nouveau dépôt n'est autorisé.").catch(() => null);
+        await sendLog(
+          guild,
+          null,
+          "Refus automatique candidature",
+          `${member.user.tag} a été refusé automatiquement pour âge IRL insuffisant.`,
+          [
+            { name: "Âge IRL", value: `${ageIrl}`, inline: true },
+            { name: "Motif", value: "Âge inférieur à 18 ans", inline: true }
+          ],
+          { category: "recruitment", level: "warning", scope: "portal.submit" }
+        );
         throw new Error("Refus automatique : l'âge IRL minimum requis est de 18 ans. Ta candidature est bloquée définitivement.");
       }
 
@@ -442,6 +478,17 @@ function registerRecruitmentRoutes(app, client) {
         });
 
         await member.send(`Ta candidature Società Ombra a été refusée automatiquement : score insuffisant au questionnaire (${quizScore}/25, minimum requis : 20/25).`).catch(() => null);
+        await sendLog(
+          guild,
+          null,
+          "Refus automatique candidature",
+          `${member.user.tag} a été refusé automatiquement pour score questionnaire insuffisant.`,
+          [
+            { name: "Score", value: `${quizScore}/25`, inline: true },
+            { name: "Seuil", value: "20/25", inline: true }
+          ],
+          { category: "recruitment", level: "warning", scope: "portal.submit" }
+        );
         throw new Error(`Refus automatique : score insuffisant au questionnaire (${quizScore}/25). Minimum requis : 20/25.`);
       }
 
@@ -472,8 +519,26 @@ function registerRecruitmentRoutes(app, client) {
       }
 
       await member.send(`Ton dossier Società Ombra a bien été transmis. Référence : #${String(ticketNumber).padStart(4, "0")} • Score questionnaire : ${quizScore}/25`).catch(() => null);
+      await sendLog(
+        guild,
+        null,
+        "Candidature web transmise",
+        `${member.user.tag} a transmis un dossier complet depuis le portail OmbraCore.`,
+        [
+          { name: "Référence ticket", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
+          { name: "Score quiz", value: `${quizScore}/25`, inline: true },
+          { name: "Portail", value: "Soumission web", inline: true }
+        ],
+        { category: "website", level: "success", scope: "portal.submit" }
+      );
       res.redirect("/recruitment?submitted=1");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Échec de soumission web", "Une candidature n'a pas pu être transmise depuis le portail.", error, {
+        category: "website",
+        scope: "portal.submit",
+        fields: user ? [{ name: "Utilisateur", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "form", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de transmettre le dossier." }));
     }
@@ -512,6 +577,12 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/admin");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur admin web", "La mise à jour du statut d'une candidature a échoué.", error, {
+        category: "website",
+        scope: "admin.status",
+        fields: user ? [{ name: "Admin", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de mettre à jour la candidature." }));
     }
@@ -555,6 +626,12 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/admin");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur admin web", "La planification d'un recrutement a échoué.", error, {
+        category: "website",
+        scope: "admin.schedule",
+        fields: user ? [{ name: "Admin", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de fixer l'horaire de recrutement." }));
     }
@@ -584,6 +661,12 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/admin");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur admin web", "La réinitialisation d'un ticket recrutement a échoué.", error, {
+        category: "website",
+        scope: "admin.reset-ticket",
+        fields: user ? [{ name: "Admin", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de réinitialiser le ticket recrutement." }));
     }
@@ -613,6 +696,12 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/admin");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur admin web", "L'archivage de tickets recrutement a échoué.", error, {
+        category: "website",
+        scope: "admin.archive-tickets",
+        fields: user ? [{ name: "Admin", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible d'archiver les tickets recrutement." }));
     }
@@ -642,6 +731,12 @@ function registerRecruitmentRoutes(app, client) {
 
       res.redirect("/admin");
     } catch (error) {
+      const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+      await sendErrorLog(guild, "Erreur admin web", "La suppression de tickets recrutement a échoué.", error, {
+        category: "website",
+        scope: "admin.delete-tickets",
+        fields: user ? [{ name: "Admin", value: `\`${user.id}\``, inline: true }] : []
+      });
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de supprimer les tickets recrutement." }));
     }

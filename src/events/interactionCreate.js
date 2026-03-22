@@ -36,6 +36,7 @@ const {
   updateTicketMember
 } = require("../modules/tickets");
 const { logCommand } = require("../services/commandLogService");
+const { sendErrorLog } = require("../services/logService");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("Interaction");
@@ -152,6 +153,20 @@ module.exports = {
       await logCommand(interaction, client);
     } catch (error) {
       logger.error(`Command failure: ${interaction.commandName}`, error);
+      await sendErrorLog(
+        interaction.guild,
+        "Erreur de commande",
+        `La commande /${interaction.commandName} a échoué pendant son exécution.`,
+        error,
+        {
+          category: "command",
+          scope: "interactionCreate",
+          fields: [
+            { name: "Utilisateur", value: `${interaction.user}`, inline: true },
+            { name: "Salon", value: `${interaction.channel}`, inline: true }
+          ]
+        }
+      );
 
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: "Une erreur est survenue.", ephemeral: true });

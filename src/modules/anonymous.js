@@ -82,7 +82,8 @@ async function submitAnonymousMessage(interaction, client) {
     [
       { name: "Salon cible", value: `<#${targetChannelId}>`, inline: true },
       { name: "Contenu", value: message.slice(0, 1024) }
-    ]
+    ],
+    { category: "anonymous", level: "warning" }
   );
 
   await interaction.reply({ content: "Transmission anonyme effectuée.", ephemeral: true });

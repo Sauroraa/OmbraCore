@@ -3,6 +3,7 @@ const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js"
 const { loadCommands } = require("./loaders/commandLoader");
 const { loadEvents } = require("./loaders/eventLoader");
 const { connectDatabase } = require("./services/database");
+const { sendErrorLog, sendLog } = require("./services/logService");
 const { startWebServer } = require("./services/webServer");
 const { loadRuntimeConfig } = require("./services/runtimeConfig");
 const { createLogger } = require("./utils/logger");
@@ -10,6 +11,24 @@ const { createLogger } = require("./utils/logger");
 require("dotenv").config();
 
 const logger = createLogger("Bootstrap");
+let activeClient = null;
+
+async function notifyProcessError(title, description, error) {
+  if (!activeClient) {
+    return;
+  }
+
+  const guild = await activeClient.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+  if (!guild) {
+    return;
+  }
+
+  await sendErrorLog(guild, title, description, error, {
+    category: "system",
+    level: "critical",
+    scope: "bootstrap"
+  });
+}
 
 function validateEnvironment() {
   const requiredKeys = ["DISCORD_TOKEN", "CLIENT_ID", "CLIENT_SECRET", "GUILD_ID", "MONGODB_URI", "SESSION_SECRET"];
@@ -45,6 +64,7 @@ async function bootstrap() {
 
   client.commands = new Collection();
   client.runtimeConfig = null;
+  activeClient = client;
 
   await connectDatabase();
   client.runtimeConfig = await loadRuntimeConfig();
@@ -54,17 +74,32 @@ async function bootstrap() {
   await startWebServer(client);
 
   await client.login(process.env.DISCORD_TOKEN);
+
+  const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
+  if (guild) {
+    await sendLog(
+      guild,
+      null,
+      "OmbraCore opérationnel",
+      "Le bot Discord et le portail web sont initialisés correctement.",
+      [],
+      { category: "system", level: "success", scope: "bootstrap" }
+    );
+  }
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(async (error) => {
   logger.error("Fatal bootstrap failure", error);
+  await notifyProcessError("Échec critique au démarrage", "OmbraCore n'a pas réussi à terminer son bootstrap.", error).catch(() => null);
   process.exit(1);
 });
 
 process.on("unhandledRejection", (error) => {
   logger.error("Unhandled rejection", error);
+  notifyProcessError("Unhandled rejection", "Une promesse non gérée a été détectée par Node.js.", error).catch(() => null);
 });
 
 process.on("uncaughtException", (error) => {
   logger.error("Uncaught exception", error);
+  notifyProcessError("Uncaught exception", "Une exception non capturée a interrompu le flux Node.js.", error).catch(() => null);
 });

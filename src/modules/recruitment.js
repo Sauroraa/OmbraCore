@@ -387,13 +387,19 @@ async function injectRecruitmentSubmissionIntoChannel({
   const reviewComponents = createRecruitmentReviewComponents(application);
 
   await sendEmbedsInChunks(channel, embeds, reviewComponents);
-
-  if (logChannelId) {
-    const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
-    if (logChannel?.isTextBased()) {
-      await sendEmbedsInChunks(logChannel, embeds, reviewComponents);
-    }
-  }
+  await sendLog(
+    guild,
+    logChannelId,
+    "Dossier recrutement injecté",
+    `Le dossier ${application.id} a été injecté dans le ticket #${String(ticketNumber).padStart(4, "0")}.`,
+    [
+      { name: "Canal", value: `${channel}`, inline: true },
+      { name: "Score quiz", value: `${Number.isFinite(score) ? score : 0}/25`, inline: true },
+      { name: "Source", value: sourceLabel, inline: true },
+      { name: "Candidature", value: `[Ouvrir le dossier complet](${getRecruitmentApplicationUrl(portalToken)})`, inline: false }
+    ],
+    { category: "recruitment", level: "success", scope: "recruitment.inject" }
+  );
 
   return { embeds };
 }
@@ -503,7 +509,14 @@ async function submitApplication(interaction, client) {
     }
   }
 
-  await sendLog(interaction.guild, config.channels?.applicationsLog, "Candidature recue", `${interaction.user.tag} a soumis une candidature.`);
+  await sendLog(
+    interaction.guild,
+    config.channels?.applicationsLog,
+    "Candidature reçue",
+    `${interaction.user.tag} a soumis une candidature via l'ancien formulaire Discord.`,
+    [{ name: "Score", value: `${score}`, inline: true }],
+    { category: "recruitment", level: "info" }
+  );
   await interaction.reply({ content: "Candidature envoyee au staff.", ephemeral: true });
 }
 
@@ -643,7 +656,8 @@ async function submitRecruitmentTicketForm(interaction, client) {
     config.channels?.applicationsLog,
     "Ticket recrutement créé",
     `${interaction.user.tag} a soumis un recrutement complet avant ouverture du ticket.`,
-    [{ name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true }]
+    [{ name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true }],
+    { category: "recruitment", level: "success" }
   );
 
   await interaction.reply({ content: `Dossier enregistré. Ton ticket recrutement est prêt : ${channel}`, ephemeral: true });
@@ -710,7 +724,8 @@ async function resetRecruitmentTicketForApplication({
       { name: "Candidat", value: `${member}`, inline: true },
       { name: "Nouvelle référence", value: `#${String(result.ticketNumber).padStart(4, "0")}`, inline: true },
       { name: "Canal", value: `${result.channel}`, inline: true }
-    ]
+    ],
+    { category: "recruitment", level: "warning" }
   );
 
   return result;
@@ -798,7 +813,8 @@ async function manageRecruitmentTicketsForApplication({
       { name: "Candidature", value: `${application.id}`, inline: true },
       { name: "Salons traités", value: `${processedCount}`, inline: true },
       { name: "Action", value: mode === "archive" ? "Archivage" : "Suppression", inline: true }
-    ]
+    ],
+    { category: "recruitment", level: mode === "archive" ? "info" : "warning" }
   );
 
   return { processedCount };

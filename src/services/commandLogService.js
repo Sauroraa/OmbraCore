@@ -6,7 +6,11 @@ async function logCommand(interaction, client) {
     client.runtimeConfig?.channels?.commandsLog,
     "Commande executee",
     `${interaction.user.tag} a utilise /${interaction.commandName}.`,
-    [{ name: "Salon", value: `${interaction.channel}`, inline: true }]
+    [
+      { name: "Utilisateur", value: `${interaction.user}`, inline: true },
+      { name: "Salon", value: `${interaction.channel}`, inline: true }
+    ],
+    { category: "command", level: "info" }
   );
 }
 
