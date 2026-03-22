@@ -15,6 +15,7 @@ module.exports = {
           { name: "Contact direction", value: "direction" },
           { name: "Probleme membre", value: "member_report" },
           { name: "Ticket recrutement", value: "recruitment" },
+          { name: "Demande de Contact", value: "business_contact" },
           { name: "Ticket partenariat", value: "partnership" },
           { name: "Plainte RP", value: "rp_complaint" }
         )

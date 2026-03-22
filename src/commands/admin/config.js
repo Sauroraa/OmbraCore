@@ -23,7 +23,7 @@ const channelKeys = [
 
 const roleKeys = ["unverified", "member", "candidate", "partner", "guest", "staff", "recruiter", "moderator"];
 const categoryKeys = ["supportTickets", "recruitmentTickets", "directionTickets", "closeArchiveCategoryId"];
-const ticketTypeKeys = ["support", "direction", "member_report", "recruitment", "partnership", "rp_complaint"];
+const ticketTypeKeys = ["support", "direction", "member_report", "recruitment", "business_contact", "partnership", "rp_complaint"];
 
 function ensureAdministrator(interaction) {
   if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {

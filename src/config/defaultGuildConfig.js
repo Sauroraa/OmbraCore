@@ -116,6 +116,10 @@ module.exports = {
         label: "Ticket recrutement",
         categoryId: ""
       },
+      business_contact: {
+        label: "Demande de Contact",
+        categoryId: ""
+      },
       partnership: {
         label: "Ticket partenariat",
         categoryId: ""
