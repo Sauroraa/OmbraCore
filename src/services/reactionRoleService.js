@@ -3,8 +3,15 @@ const { createLogger } = require("../utils/logger");
 const logger = createLogger("ReactionRole");
 
 async function fetchReactionContext(reaction, client) {
+  if (!reaction || !client?.runtimeConfig) {
+    return null;
+  }
+
   if (reaction.partial) {
-    await reaction.fetch().catch(() => null);
+    const hydratedReaction = await reaction.fetch().catch(() => null);
+    if (!hydratedReaction) {
+      return null;
+    }
   }
 
   const config = client.runtimeConfig;
@@ -33,6 +40,11 @@ async function fetchReactionContext(reaction, client) {
 }
 
 async function ensureRulesReaction(client) {
+  if (!client?.runtimeConfig) {
+    logger.warn("Runtime config unavailable, impossible d'initialiser la réaction règlement.");
+    return;
+  }
+
   const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
   const targetMessageId = client.runtimeConfig?.reactions?.rulesMessageId;
   const emoji = client.runtimeConfig?.reactions?.rulesEmoji || "✅";
