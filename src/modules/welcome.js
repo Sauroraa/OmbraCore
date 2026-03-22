@@ -10,11 +10,18 @@ const { sendLog } = require("../services/logService");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("Welcome");
+const DEFAULT_RULES_LINK = "https://discord.com/channels/1485310616519573737/1485315733318668359";
+
+function getRulesTarget(config) {
+  return (
+    config.messages?.rulesButtonUrl ||
+    config.messages?.welcomeRulesUrl ||
+    DEFAULT_RULES_LINK
+  );
+}
 
 function formatTemplate(template, member, config) {
-  const rulesChannelMention = config.channels?.rules
-    ? `<#${config.channels.rules}>`
-    : "`#règlement`";
+  const rulesChannelMention = getRulesTarget(config);
 
   return template
     .replace(/\{user\}/g, `${member}`)
@@ -70,9 +77,7 @@ function buildFooter(config, guild, fallbackIconUrl) {
 
 function createWelcomeEmbeds(member, config) {
   const texts = getWelcomeTexts(member, config);
-  const rulesChannelMention = config.channels?.rules
-    ? `<#${config.channels.rules}>`
-    : "`#règlement`";
+  const rulesChannelMention = getRulesTarget(config);
   const avatarUrl = member.user.displayAvatarURL({
     extension: "png",
     size: 512,
@@ -169,15 +174,12 @@ function createWelcomeEmbed(member, config) {
 function createWelcomeComponents(config) {
   const row = new ActionRowBuilder();
 
-  if (config.channels?.rules) {
+  if (getRulesTarget(config)) {
     row.addComponents(
       new ButtonBuilder()
         .setLabel(config.messages?.rulesButtonLabel || "Voir le règlement")
         .setStyle(ButtonStyle.Link)
-        .setURL(
-          config.messages?.rulesButtonUrl ||
-            `https://discord.com/channels/${config.guildId || "@me"}/${config.channels.rules}`
-        )
+        .setURL(getRulesTarget(config))
     );
   }
 
