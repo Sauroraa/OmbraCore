@@ -143,9 +143,9 @@ async function createTicket(interaction, client, selectedType) {
   });
 
   const embed = createBaseEmbed({
-    title: "Dossier ouvert",
+    title: "Bureau de liaison • Dossier actif",
     description:
-      `${interaction.user}, ton espace privé est maintenant en place.\nLe staff concerné peut prendre ce dossier en charge et assurer le suivi dans de bonnes conditions.`,
+      `${interaction.user}, ton espace privé est désormais ouvert.\nLe dossier peut maintenant être pris en charge par le pôle concerné dans un cadre discret, structuré et propre.`,
     fields: [
       { name: "Motif", value: typeConfig.label, inline: true },
       { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
@@ -155,22 +155,22 @@ async function createTicket(interaction, client, selectedType) {
   });
 
   const guideEmbed = createBaseEmbed({
-    title: "Cadre du salon",
+    title: "Cadre de traitement",
     description:
-      "Expose ta demande de manière claire et complète.\nÉvite les messages inutiles pour garder un traitement rapide, discret et propre.",
+      "Expose ta demande de manière claire, complète et concise.\nÉvite les messages inutiles afin de conserver un traitement rapide, discret et parfaitement lisible.",
     fields: [
-      { name: "Conseil", value: "Présente les faits, les noms utiles et le contexte.", inline: false },
-      { name: "Gestion", value: "Le staff peut prendre, fermer ou archiver le dossier.", inline: false }
+      { name: "Détail utile", value: "Présente les faits, les noms utiles et le contexte exact.", inline: false },
+      { name: "Gestion", value: "Le staff peut prendre, fermer, archiver ou compléter le dossier.", inline: false }
     ],
     color: 0x1d1d1d
   });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(TICKET_CLAIM).setLabel("Prendre en charge").setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId(TICKET_CLOSE).setLabel("Fermer").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(TICKET_CLOSE).setLabel("Clore").setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(TICKET_DELETE).setLabel("Supprimer").setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(TICKET_MEMBER_ADD).setLabel("Ajouter membre").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId(TICKET_MEMBER_REMOVE).setLabel("Retirer membre").setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId(TICKET_MEMBER_ADD).setLabel("Ajouter un accès").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(TICKET_MEMBER_REMOVE).setLabel("Retirer un accès").setStyle(ButtonStyle.Secondary)
   );
   const rowTwo = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(TICKET_TRANSCRIPT).setLabel("Transcript").setStyle(ButtonStyle.Secondary)
@@ -216,8 +216,16 @@ async function claimTicket(interaction, client) {
   ticket.claimedAt = new Date();
   await ticket.save();
 
-  await interaction.reply({ content: `${interaction.user} prend ce ticket en charge.` });
   const responseMinutes = Math.max(1, Math.round((ticket.claimedAt.getTime() - ticket.openedAt.getTime()) / 60000));
+
+  const claimEmbed = createBaseEmbed({
+    title: "Dossier pris en charge",
+    description: `${interaction.user} assure désormais le suivi principal de ce dossier.`,
+    fields: [{ name: "Temps de réponse", value: `${responseMinutes} minute(s)`, inline: true }],
+    color: 0x24301f
+  });
+
+  await interaction.reply({ embeds: [claimEmbed] });
   await sendLog(
     interaction.guild,
     client.runtimeConfig.channels?.ticketsLog,
@@ -235,10 +243,16 @@ async function closeTicket(interaction, client) {
   }
 
   const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(TICKET_CLOSE_CONFIRM).setLabel("Confirmer la fermeture").setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId(TICKET_CLOSE_CONFIRM).setLabel("Confirmer la clôture").setStyle(ButtonStyle.Danger)
   );
 
-  await interaction.reply({ content: "Confirmer la fermeture du ticket.", components: [row], ephemeral: true });
+  const closePromptEmbed = createBaseEmbed({
+    title: "Confirmation requise",
+    description: "Confirme la clôture du dossier. Cette action met fin au traitement actif et prépare l’archivage.",
+    color: 0x2a1a1a
+  });
+
+  await interaction.reply({ embeds: [closePromptEmbed], components: [row], ephemeral: true });
 }
 
 async function confirmCloseTicket(interaction, client) {
@@ -257,7 +271,14 @@ async function confirmCloseTicket(interaction, client) {
   }
 
   await sendLog(interaction.guild, client.runtimeConfig.channels?.ticketsLog, "Ticket ferme", `Le ticket #${ticket.ticketNumber} a ete ferme par ${interaction.user.tag}.`);
-  await interaction.reply({ content: "Ticket ferme. Le salon peut maintenant etre archive ou supprime." });
+  const closedEmbed = createBaseEmbed({
+    title: "Dossier clôturé",
+    description: "Le traitement actif est terminé.\nLe salon peut désormais être archivé ou supprimé selon le besoin du staff.",
+    fields: [{ name: "Décision", value: `Clôturé par ${interaction.user.tag}`, inline: true }],
+    color: 0x1b2230
+  });
+
+  await interaction.reply({ embeds: [closedEmbed] });
 }
 
 async function deleteTicket(interaction, client) {
@@ -286,7 +307,13 @@ async function deleteTicket(interaction, client) {
       }).catch(() => null);
     }
   }
-  await interaction.reply({ content: "Suppression du salon en cours." });
+  const deleteEmbed = createBaseEmbed({
+    title: "Suppression engagée",
+    description: "Le dossier est marqué comme supprimé. Le salon va maintenant être retiré proprement.",
+    color: 0x301616
+  });
+
+  await interaction.reply({ embeds: [deleteEmbed] });
   await interaction.channel.delete("Ticket supprime par OmbraCore").catch(() => null);
 }
 
