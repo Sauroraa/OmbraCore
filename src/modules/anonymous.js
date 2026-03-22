@@ -1,0 +1,89 @@
+const AnonymousLog = require("../models/AnonymousLog");
+const UserProfile = require("../models/UserProfile");
+const { createBaseEmbed } = require("../utils/embeds");
+const { sendLog } = require("../services/logService");
+
+async function submitAnonymousMessage(interaction, client) {
+  const config = client.runtimeConfig;
+  const guildId = interaction.guild.id;
+  const authorId = interaction.user.id;
+  const targetChannelId = interaction.options.getChannel("salon", true).id;
+  const priority = interaction.options.getString("priorite", true).trim().toLowerCase();
+  const anonymousSignature = interaction.options.getBoolean("signature") ?? true;
+  const message = interaction.options.getString("message", true).trim();
+  const blockedWords = config.automod?.blockedWords || [];
+  const restrictedRoles = [config.roles?.unverified].filter(Boolean);
+
+  if (interaction.member.roles.cache.some((role) => restrictedRoles.includes(role.id))) {
+    await interaction.reply({ content: "Tu dois valider le reglement avant d'utiliser /ano.", ephemeral: true });
+    return;
+  }
+
+  const profile = await UserProfile.findOne({ guildId, userId: authorId });
+  if (profile?.anonymousCooldownUntil && profile.anonymousCooldownUntil > new Date()) {
+    await interaction.reply({ content: "Cooldown actif pour /ano.", ephemeral: true });
+    return;
+  }
+
+  if (blockedWords.some((word) => message.toLowerCase().includes(word.toLowerCase()))) {
+    await interaction.reply({ content: "Le message contient un terme bloque.", ephemeral: true });
+    return;
+  }
+
+  if (message.includes("@everyone") || message.includes("@here")) {
+    await interaction.reply({ content: "Les mentions globales sont interdites dans /ano.", ephemeral: true });
+    return;
+  }
+
+  const targetChannel = await interaction.guild.channels.fetch(targetChannelId).catch(() => null);
+  if (!targetChannel?.isTextBased()) {
+    await interaction.reply({ content: "Salon cible invalide.", ephemeral: true });
+    return;
+  }
+
+  const embed = createBaseEmbed({
+    title: "Message anonyme",
+    description: message,
+    fields: [{ name: "Priorite", value: priority, inline: true }],
+    color: priority === "high" ? 0x9b111e : 0x353535
+  });
+
+  await targetChannel.send({ embeds: [embed] });
+
+  await AnonymousLog.create({
+    guildId,
+    authorId,
+    targetChannelId,
+    message,
+    priority,
+    anonymousSignature
+  });
+
+  await UserProfile.findOneAndUpdate(
+    { guildId, userId: authorId },
+    {
+      $set: {
+        anonymousCooldownUntil: new Date(Date.now() + (config.automod?.anonymousCooldownSeconds || 300) * 1000)
+      }
+    },
+    { upsert: true }
+  );
+
+  await sendLog(
+    interaction.guild,
+    config.channels?.anonymousLog,
+    "Message anonyme trace",
+    `${interaction.user.tag} a utilise /ano.`,
+    [
+      { name: "Salon cible", value: `<#${targetChannelId}>`, inline: true },
+      { name: "Priorite", value: priority, inline: true },
+      { name: "Contenu", value: message.slice(0, 1024) }
+    ]
+  );
+
+  await interaction.reply({ content: "Message anonyme envoye.", ephemeral: true });
+}
+
+module.exports = {
+  submitAnonymousMessage
+};

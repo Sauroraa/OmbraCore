@@ -1,0 +1,24 @@
+services:
+  ombracore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ombracore
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      mongodb:
+        condition: service_started
+
+  mongodb:
+    image: mongo:7
+    container_name: ombracore-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ombracore
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:

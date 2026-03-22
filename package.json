@@ -1,0 +1,21 @@
+{
+  "name": "ombracore",
+  "version": "1.0.0",
+  "description": "OmbraCore Discord bot for Societa Ombra",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "register": "node src/scripts/registerCommands.js",
+    "doctor": "node src/scripts/doctor.js"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.4.7",
+    "mongoose": "^8.12.1"
+  }
+}
