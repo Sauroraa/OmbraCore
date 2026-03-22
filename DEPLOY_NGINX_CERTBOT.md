@@ -19,12 +19,14 @@ apt install -y nginx certbot python3-certbot-nginx
 mkdir -p /var/www/certbot
 ```
 
-## 3. Installer la config Nginx
+## 3. Installer la config Nginx de bootstrap
+
+Avant le premier certificat, utilise d'abord la version HTTP-only :
 
 Depuis le repo :
 
 ```bash
-cp /home/OmbreCore/nginx/conf/ombracore.conf /etc/nginx/sites-available/ombracore.conf
+cp /home/OmbreCore/nginx/conf/ombracore.bootstrap.conf /etc/nginx/sites-available/ombracore.conf
 ln -sf /etc/nginx/sites-available/ombracore.conf /etc/nginx/sites-enabled/ombracore.conf
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
@@ -34,7 +36,7 @@ systemctl reload nginx
 ## 4. Generer le certificat SSL
 
 ```bash
-certbot --nginx -d societa.univers-bot.fr
+certbot --webroot -w /var/www/certbot -d societa.univers-bot.fr
 ```
 
 Choix recommandes :
@@ -42,14 +44,22 @@ Choix recommandes :
 - redirection HTTP vers HTTPS : `2`
 - email LetsEncrypt : ton email admin
 
-## 5. Verifier le renouvellement auto
+## 5. Basculer sur la config HTTPS
+
+```bash
+cp /home/OmbreCore/nginx/conf/ombracore.conf /etc/nginx/sites-available/ombracore.conf
+nginx -t
+systemctl reload nginx
+```
+
+## 6. Verifier le renouvellement auto
 
 ```bash
 systemctl status certbot.timer --no-pager
 certbot renew --dry-run
 ```
 
-## 6. Verifier OmbraCore
+## 7. Verifier OmbraCore
 
 ```bash
 pm2 status
@@ -63,7 +73,7 @@ Tu dois obtenir :
 - `200 OK` sur `127.0.0.1:3000/health`
 - `200 OK` sur `https://societa.univers-bot.fr/health`
 
-## 7. Variables `.env`
+## 8. Variables `.env`
 
 Assure-toi d'avoir au minimum :
 
@@ -82,7 +92,7 @@ cd /home/OmbreCore
 pm2 restart ombracore --update-env
 ```
 
-## 8. OAuth Discord
+## 9. OAuth Discord
 
 Dans le portail Discord Developer, ajoute exactement cette URL de redirection :
 

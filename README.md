@@ -106,14 +106,17 @@ Flux :
 Une configuration prete pour `societa.univers-bot.fr` est incluse :
 
 - [nginx/conf/ombracore.conf](/f:/Sauroraa%202k26/Societa/Societa%20Bot/nginx/conf/ombracore.conf)
+- [nginx/conf/ombracore.bootstrap.conf](/f:/Sauroraa%202k26/Societa/Societa%20Bot/nginx/conf/ombracore.bootstrap.conf)
 - [DEPLOY_NGINX_CERTBOT.md](/f:/Sauroraa%202k26/Societa/Societa%20Bot/DEPLOY_NGINX_CERTBOT.md)
 
 Chemin recommande sur le serveur :
 
 ```bash
-cp /home/OmbreCore/nginx/conf/ombracore.conf /etc/nginx/sites-available/ombracore.conf
+cp /home/OmbreCore/nginx/conf/ombracore.bootstrap.conf /etc/nginx/sites-available/ombracore.conf
 ln -sf /etc/nginx/sites-available/ombracore.conf /etc/nginx/sites-enabled/ombracore.conf
-certbot --nginx -d societa.univers-bot.fr
+certbot --webroot -w /var/www/certbot -d societa.univers-bot.fr
+cp /home/OmbreCore/nginx/conf/ombracore.conf /etc/nginx/sites-available/ombracore.conf
+systemctl reload nginx
 ```
 
 ## Variables d'environnement
