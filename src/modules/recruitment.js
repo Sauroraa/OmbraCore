@@ -21,6 +21,7 @@ const {
 } = require("../constants/customIds");
 const { createBaseEmbed } = require("../utils/embeds");
 const { sendLog } = require("../services/logService");
+const { applyApplicationStatus } = require("../services/recruitmentDecisionService");
 const { createTicketChannel, getNextTicketNumberFromGuild } = require("./tickets");
 
 function createRecruitmentPanel() {
@@ -319,25 +320,14 @@ async function reviewApplication(interaction, status) {
     return;
   }
 
-  application.status = status;
-  application.reviewedBy = interaction.user.id;
-  application.reviewedAt = new Date();
-  await application.save();
-
-  const member = await interaction.guild.members.fetch(application.userId).catch(() => null);
-  if (member) {
-    if (status === "accepted" && interaction.client.runtimeConfig.recruitment?.acceptedRoleId) {
-      await member.roles.add(interaction.client.runtimeConfig.recruitment.acceptedRoleId).catch(() => null);
-    }
-
-    if (status === "refused" && interaction.client.runtimeConfig.recruitment?.refusedRoleId) {
-      await member.roles.add(interaction.client.runtimeConfig.recruitment.refusedRoleId).catch(() => null);
-    }
-
-    await member.send(`Ta candidature Societa Ombra est maintenant : ${status}.`).catch(() => null);
-  }
-
-  await sendLog(interaction.guild, interaction.client.runtimeConfig.channels?.applicationsLog, "Candidature traitee", `La candidature ${application.id} est definie comme ${status} par ${interaction.user.tag}.`);
+  await applyApplicationStatus({
+    client: interaction.client,
+    guild: interaction.guild,
+    application,
+    status,
+    actorId: interaction.user.id,
+    actorLabel: interaction.user.tag
+  });
   await interaction.reply({ content: `Candidature definie comme : ${status}.`, ephemeral: true });
 }
 

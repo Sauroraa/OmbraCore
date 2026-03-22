@@ -4,7 +4,13 @@ const Application = require("../models/Application");
 const Ticket = require("../models/Ticket");
 const UserProfile = require("../models/UserProfile");
 const { dispatchRecruitmentSubmission } = require("../modules/recruitment");
+const {
+  applyApplicationStatus,
+  scheduleApplicationInterview
+} = require("../services/recruitmentDecisionService");
 const { renderRecruitmentPage } = require("./recruitmentPage");
+
+const ADMIN_USER_IDS = new Set(["976309113749372958", "780527561175597067"]);
 
 const FORM_DEFINITION = [
   { key: "nom_rp", label: "Nom RP" },
@@ -204,6 +210,17 @@ function registerRecruitmentRoutes(app, client) {
     const user = readSession(req);
     const submitted = req.query.submitted === "1";
     const state = await buildPortalState(client, user, req.query.view, submitted);
+    res.type("html").send(renderRecruitmentPage(state));
+  });
+
+  app.get("/admin", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    const state = await buildPortalState(client, user, "admin", false);
     res.type("html").send(renderRecruitmentPage(state));
   });
 
@@ -412,6 +429,87 @@ function registerRecruitmentRoutes(app, client) {
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de transmettre le dossier." }));
     }
   });
+
+  app.post("/admin/recruitment/:applicationId/status", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    try {
+      const application = await Application.findById(req.params.applicationId);
+      if (!application) {
+        throw new Error("Candidature introuvable.");
+      }
+
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      const status = String(req.body.status || "").trim();
+      const note = String(req.body.note || "").trim();
+
+      if (!["accepted", "refused", "on_hold"].includes(status)) {
+        throw new Error("Statut admin invalide.");
+      }
+
+      await applyApplicationStatus({
+        client,
+        guild,
+        application,
+        status,
+        actorId: user.id,
+        actorLabel: `${user.username}#${user.discriminator || "0000"}`,
+        note
+      });
+
+      res.redirect("/admin");
+    } catch (error) {
+      const state = await buildPortalState(client, user, "admin", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de mettre à jour la candidature." }));
+    }
+  });
+
+  app.post("/admin/recruitment/:applicationId/schedule", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    try {
+      const application = await Application.findById(req.params.applicationId);
+      if (!application) {
+        throw new Error("Candidature introuvable.");
+      }
+
+      const scheduledFor = String(req.body.scheduled_for || "").trim();
+      const note = String(req.body.schedule_note || "").trim();
+
+      if (!scheduledFor) {
+        throw new Error("La date de recrutement est requise.");
+      }
+
+      const scheduleDate = new Date(scheduledFor);
+      if (Number.isNaN(scheduleDate.getTime())) {
+        throw new Error("La date de recrutement est invalide.");
+      }
+
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      await scheduleApplicationInterview({
+        client,
+        guild,
+        application,
+        scheduledFor: scheduleDate,
+        note,
+        actorId: user.id,
+        actorLabel: `${user.username}#${user.discriminator || "0000"}`
+      });
+
+      res.redirect("/admin");
+    } catch (error) {
+      const state = await buildPortalState(client, user, "admin", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de fixer l'horaire de recrutement." }));
+    }
+  });
 }
 
 function evaluateQuiz(body) {
@@ -428,17 +526,25 @@ async function buildPortalState(client, user, requestedView, submitted) {
     rulesAccepted: false,
     rulesAcceptedAt: null,
     recruitmentLocked: false,
-    lockReason: null
+    lockReason: null,
+    isAdmin: isAdminUser(user),
+    adminApplications: []
   };
 
   if (user) {
     const guildId = process.env.GUILD_ID;
-    const [profile, application, ticket, lockedApplication] = await Promise.all([
+    const queries = [
       UserProfile.findOne({ guildId, userId: user.id }).lean(),
       Application.findOne({ guildId, userId: user.id }).sort({ createdAt: -1 }).lean(),
       Ticket.findOne({ guildId, authorId: user.id, type: "recruitment" }).sort({ createdAt: -1 }).lean(),
       Application.findOne({ guildId, userId: user.id, locked: true, refusalCode: "underage" }).sort({ createdAt: -1 }).lean()
-    ]);
+    ];
+
+    if (portal.isAdmin) {
+      queries.push(Application.find({ guildId }).sort({ createdAt: -1 }).limit(50).lean());
+    }
+
+    const [profile, application, ticket, lockedApplication, adminApplications = []] = await Promise.all(queries);
 
     portal.rulesAccepted = Boolean(profile?.rulesAcceptedAt);
     portal.rulesAcceptedAt = profile?.rulesAcceptedAt || null;
@@ -446,6 +552,9 @@ async function buildPortalState(client, user, requestedView, submitted) {
     portal.latestRecruitmentTicket = serializeTicket(ticket);
     portal.recruitmentLocked = Boolean(lockedApplication);
     portal.lockReason = lockedApplication?.notes || null;
+    portal.adminApplications = portal.isAdmin
+      ? await serializeAdminApplications(client, adminApplications)
+      : [];
   }
 
   return {
@@ -458,7 +567,7 @@ async function buildPortalState(client, user, requestedView, submitted) {
 }
 
 function resolveInitialView({ requestedView, submitted, user, portal }) {
-  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation"]);
+  const allowedViews = new Set(["home", "access", "dossier", "form", "status", "confirmation", "admin"]);
 
   if (requestedView && allowedViews.has(requestedView)) {
     return requestedView;
@@ -470,6 +579,10 @@ function resolveInitialView({ requestedView, submitted, user, portal }) {
 
   if (!user) {
     return "home";
+  }
+
+  if (requestedView === "admin" && portal.isAdmin) {
+    return "admin";
   }
 
   if (portal.recruitmentLocked || portal.latestApplication) {
@@ -509,10 +622,28 @@ function serializeApplication(application) {
     autoRefused: Boolean(application.autoRefused),
     locked: Boolean(application.locked),
     refusalCode: application.refusalCode || null,
+    interviewScheduledFor: application.interviewScheduledFor || null,
+    interviewMessage: application.interviewMessage || "",
     sectionCount: Array.isArray(application.answers) ? application.answers.length : 0,
     answers: Array.isArray(application.answers) ? application.answers : [],
     status: mappedStatus
   };
+}
+
+async function serializeAdminApplications(client, applications) {
+  return Promise.all(
+    applications.map(async (application) => {
+      const serialized = serializeApplication(application);
+      const user = await client.users.fetch(application.userId).catch(() => null);
+
+      return {
+        ...serialized,
+        userId: application.userId,
+        userTag: user ? user.tag : `Utilisateur ${application.userId}`,
+        username: user?.username || application.userId
+      };
+    })
+  );
 }
 
 function serializeTicket(ticket) {
@@ -565,6 +696,10 @@ function readSession(req) {
   } catch {
     return null;
   }
+}
+
+function isAdminUser(user) {
+  return Boolean(user?.id && ADMIN_USER_IDS.has(user.id));
 }
 
 module.exports = { registerRecruitmentRoutes };

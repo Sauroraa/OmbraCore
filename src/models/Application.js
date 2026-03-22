@@ -21,6 +21,8 @@ const applicationSchema = new mongoose.Schema(
       ],
       default: []
     },
+    interviewScheduledFor: { type: Date, default: null },
+    interviewMessage: { type: String, default: "" },
     reviewedBy: { type: String, default: null },
     reviewedAt: { type: Date, default: null }
   },

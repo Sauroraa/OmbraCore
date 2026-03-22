@@ -27,8 +27,9 @@ function renderRecruitmentPage({
     .hero{padding:32px;border-radius:24px;background:linear-gradient(135deg,#151515,#121212);border:1px solid var(--line);box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1.2fr) 360px;gap:24px}.hero h2{margin:0;font-size:2.8rem;line-height:1.05}.hero p{margin:16px 0 0;color:var(--muted);max-width:680px;line-height:1.7}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.hero-card{padding:20px;border-radius:20px;background:#101010;border:1px solid #232323;display:grid;gap:16px}.hero-card h3{margin:0;font-size:1.05rem}.hero-card p{margin:0;color:var(--muted);line-height:1.7}.grid{display:grid;gap:16px}.grid.cards{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:20px}.card,.panel,.status-band{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.card{padding:18px}.card small{display:block;color:var(--muted);font-size:.8rem;margin-bottom:8px}.card strong{font-size:1.25rem}.panel{padding:20px}.panel h3{margin:0 0 8px;font-size:1.1rem}.panel p{margin:0;color:var(--muted);line-height:1.7}
     .dashboard-grid{display:grid;gap:16px;grid-template-columns:repeat(4,minmax(0,1fr))}.status-band{padding:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.tone-success{background:linear-gradient(180deg,#162118,#151515)}.tone-danger{background:linear-gradient(180deg,#251616,#151515)}.tone-warning{background:linear-gradient(180deg,#262114,#151515)}.progress{height:10px;border-radius:999px;background:#101010;border:1px solid #222;overflow:hidden}.progress span{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#e3bf85)}.meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.meta{padding:14px;border-radius:14px;background:#111;border:1px solid #222}.meta small{display:block;color:var(--muted);margin-bottom:6px}.meta strong{font-size:.95rem}
     .form-wrap{display:grid;gap:16px}.section{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}.section-head{padding:18px 20px;border-bottom:1px solid #222;display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.section-head h3{margin:0;font-size:1rem}.section-head p{margin:6px 0 0;color:var(--muted);font-size:.9rem;line-height:1.6}.section-index{min-width:56px;height:56px;border-radius:14px;background:#101010;border:1px solid #262626;display:grid;place-items:center;color:var(--gold);font-weight:800}.section-body{padding:20px}.fields-2,.fields-3,.fields-quiz{display:grid;gap:16px}.fields-2{grid-template-columns:repeat(2,minmax(0,1fr))}.fields-3{grid-template-columns:repeat(3,minmax(0,1fr))}.fields-quiz{grid-template-columns:1fr}.field.full{grid-column:1/-1}.field label{display:block;font-size:.88rem;font-weight:700;margin-bottom:8px}.field input,.field textarea,.field select{width:100%;padding:14px 15px;border-radius:12px;border:1px solid #2a2a2a;background:#101010;color:var(--text);outline:none;transition:.18s}.field input:focus,.field textarea:focus,.field select:focus{border-color:rgba(201,161,93,.6);box-shadow:0 0 0 3px rgba(201,161,93,.12)}.field textarea{min-height:140px;resize:vertical}.quiz-note{padding:14px 16px;border-radius:14px;background:#121212;border:1px solid var(--line2);color:var(--muted);line-height:1.7}.footer-actions{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding:20px;border-radius:18px;background:var(--panel);border:1px solid var(--line)}.footer-actions p{margin:0;color:var(--muted);max-width:760px;line-height:1.7}.answers-list{display:grid;gap:10px;margin-top:18px}.answer-item{padding:14px;border-radius:14px;background:#111;border:1px solid #222}.answer-item strong{display:block;font-size:.92rem;margin-bottom:6px}.answer-item span{display:block;color:var(--muted);line-height:1.65;white-space:pre-wrap}
-    @media(max-width:1180px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--line)}.dashboard-grid,.grid.cards,.meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.fields-2,.fields-3{grid-template-columns:1fr}}
-    @media(max-width:720px){.main,.sidebar{padding:16px}.dashboard-grid,.grid.cards,.meta-grid{grid-template-columns:1fr}.topbar,.hero-actions,.top-actions,.footer-actions{flex-direction:column;align-items:stretch}.btn{width:100%}}
+    .admin-list{display:grid;gap:16px}.admin-card{padding:18px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow)}.admin-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}.admin-head h3{margin:0;font-size:1rem}.admin-head p{margin:6px 0 0;color:var(--muted)}.admin-stack{display:grid;gap:14px;margin-top:16px}.admin-form{display:grid;gap:12px;padding:14px;border-radius:14px;background:#111;border:1px solid #222}.admin-form h4{margin:0;font-size:.92rem}.admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    @media(max-width:1180px){.app{grid-template-columns:1fr}.sidebar{border-right:none;border-bottom:1px solid var(--line)}.dashboard-grid,.grid.cards,.meta-grid,.admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.fields-2,.fields-3{grid-template-columns:1fr}}
+    @media(max-width:720px){.main,.sidebar{padding:16px}.dashboard-grid,.grid.cards,.meta-grid,.admin-grid{grid-template-columns:1fr}.topbar,.hero-actions,.top-actions,.footer-actions{flex-direction:column;align-items:stretch}.btn{width:100%}}
   </style>
 </head>
 <body>
@@ -42,6 +43,7 @@ function renderRecruitmentPage({
     const authUrl = (state.baseUrl || '${DEFAULT_BASE_URL}') + '/recruitment/login';
     const submitUrl = (state.baseUrl || '${DEFAULT_BASE_URL}') + '/recruitment/submit';
     const logoutUrl = (state.baseUrl || '${DEFAULT_BASE_URL}') + '/recruitment/logout';
+    const adminUrl = (state.baseUrl || '${DEFAULT_BASE_URL}') + '/admin';
     const draftStorageKey = 'ombra_draft_clean';
     const sections = [
       { index: '01', title: 'Informations RP', caption: 'Identité de ton personnage.', layout: 'fields-2', fields: [['Nom RP','nom_rp'],['Prénom RP','prenom_rp'],['Âge RP','age_rp'],['Origine','origine_rp'],['Profession actuelle','profession_rp','text',true]] },
@@ -208,6 +210,75 @@ function renderRecruitmentPage({
         </div>
       );
 
+      const AdminView = () => (
+        <div className='admin-list'>
+          {!state.portal?.isAdmin ? <div className='alert error'>Accès admin refusé.</div> : null}
+          {(state.portal?.adminApplications || []).map((item) => (
+            <div className='admin-card' key={item.id}>
+              <div className='admin-head'>
+                <div>
+                  <h3>{item.userTag}</h3>
+                  <p>Référence : {item.id} • Score quiz : {item.quizScore || 0}/25 • Âge IRL : {item.ageIrl || 'N/R'}</p>
+                </div>
+                <div className={'status-band ' + toneClass(item.status.tone)} style={{padding:'12px 14px'}}>
+                  <strong>{item.status.label}</strong>
+                </div>
+              </div>
+              <div className='meta-grid' style={{marginTop:'16px'}}>
+                <div className='meta'><small>Créée le</small><strong>{formatDate(item.createdAt)}</strong></div>
+                <div className='meta'><small>Dernière mise à jour</small><strong>{formatDate(item.updatedAt)}</strong></div>
+                <div className='meta'><small>Entretien</small><strong>{item.interviewScheduledFor ? formatDate(item.interviewScheduledFor) : 'Non fixé'}</strong></div>
+              </div>
+              {item.notes ? <div className='alert info' style={{marginTop:'16px'}}>{item.notes}</div> : null}
+              <div className='admin-stack'>
+                <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/status'}>
+                  <h4>Décision staff</h4>
+                  <div className='admin-grid'>
+                    <div className='field'>
+                      <label>Statut</label>
+                      <select name='status' defaultValue='on_hold'>
+                        <option value='accepted'>Acceptée</option>
+                        <option value='refused'>Refusée</option>
+                        <option value='on_hold'>En étude</option>
+                      </select>
+                    </div>
+                    <div className='field'>
+                      <label>Note staff</label>
+                      <input type='text' name='note' placeholder='Motif ou précision transmise en DM' />
+                    </div>
+                  </div>
+                  <div className='top-actions'>
+                    <button type='submit' className='btn primary'>Mettre à jour</button>
+                  </div>
+                </form>
+                <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/schedule'}>
+                  <h4>Convocation recrutement</h4>
+                  <div className='admin-grid'>
+                    <div className='field'>
+                      <label>Date et heure</label>
+                      <input type='datetime-local' name='scheduled_for' />
+                    </div>
+                    <div className='field'>
+                      <label>Instruction</label>
+                      <input type='text' name='schedule_note' placeholder='Ex: Présence vocale requise 10 min avant' />
+                    </div>
+                  </div>
+                  <div className='top-actions'>
+                    <button type='submit' className='btn'>Envoyer la convocation</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          ))}
+          {state.portal?.isAdmin && !(state.portal?.adminApplications || []).length ? (
+            <div className='panel'>
+              <h3>Aucune candidature</h3>
+              <p>Aucun dossier n’est actuellement remonté dans la gestion web.</p>
+            </div>
+          ) : null}
+        </div>
+      );
+
       const FormView = () => (
         <div className='form-wrap'>
           {!state.user ? <div className='alert error'>Connexion Discord requise avant de remplir le formulaire.</div> : null}
@@ -280,7 +351,8 @@ function renderRecruitmentPage({
         dossier: ['Mon dossier', 'Suivi du dossier candidat et accès rapide au formulaire.'],
         form: ['Formulaire', 'Dossier candidat complet, questionnaire inclus et transmission directe.'],
         status: ['Statut', 'État de traitement du dossier candidat.'],
-        access: ['Connexion Discord', 'Validation de session avant accès au portail.']
+        access: ['Connexion Discord', 'Validation de session avant accès au portail.'],
+        admin: ['Gestion', 'Pilotage staff des candidatures et convocations recrutement.']
       };
 
       return (
@@ -295,6 +367,7 @@ function renderRecruitmentPage({
               <button className={view === 'dossier' ? 'active' : ''} onClick={() => setView(state.user ? 'dossier' : 'access')}>Mon dossier</button>
               <button className={view === 'form' ? 'active' : ''} onClick={() => setView(state.user ? 'form' : 'access')}>Formulaire</button>
               <button className={view === 'status' ? 'active' : ''} onClick={() => setView(state.user ? 'status' : 'access')}>Statut</button>
+              {state.portal?.isAdmin ? <button className={view === 'admin' ? 'active' : ''} onClick={() => setView('admin')}>Gestion</button> : null}
               <button className={view === 'access' ? 'active' : ''} onClick={() => setView('access')}>Connexion</button>
             </div>
             <div className='sidebar-foot'>
@@ -308,6 +381,7 @@ function renderRecruitmentPage({
               <div className='top-actions'>
                 <button type='button' className='btn ghost' onClick={() => setView('home')}>Accueil</button>
                 <button type='button' className='btn' onClick={() => setView(state.user ? 'form' : 'access')}>Accéder au recrutement</button>
+                {state.portal?.isAdmin ? <button type='button' className='btn' onClick={() => setView('admin')}>Gestion admin</button> : null}
               </div>
             </div>
             {state.error ? <div className='alert error'>{state.error}</div> : null}
@@ -317,6 +391,7 @@ function renderRecruitmentPage({
             {view === 'dossier' ? DossierView() : null}
             {view === 'form' ? FormView() : null}
             {view === 'status' ? StatusView() : null}
+            {view === 'admin' ? AdminView() : null}
           </main>
         </div>
       );

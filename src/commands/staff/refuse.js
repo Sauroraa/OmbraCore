@@ -1,6 +1,7 @@
 const { PermissionFlagsBits, SlashCommandBuilder } = require("discord.js");
 
 const { getLatestApplicationByUser } = require("../../services/applicationService");
+const { applyApplicationStatus } = require("../../services/recruitmentDecisionService");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -17,16 +18,14 @@ module.exports = {
       return;
     }
 
-    application.status = "refused";
-    application.reviewedBy = interaction.user.id;
-    application.reviewedAt = new Date();
-    await application.save();
-
-    const member = await interaction.guild.members.fetch(user.id).catch(() => null);
-    if (member && interaction.client.runtimeConfig.recruitment?.refusedRoleId) {
-      await member.roles.add(interaction.client.runtimeConfig.recruitment.refusedRoleId).catch(() => null);
-      await member.send("Ta candidature Societa Ombra a ete refusee.").catch(() => null);
-    }
+    await applyApplicationStatus({
+      client: interaction.client,
+      guild: interaction.guild,
+      application,
+      status: "refused",
+      actorId: interaction.user.id,
+      actorLabel: interaction.user.tag
+    });
 
     await interaction.reply({ content: `La candidature de ${user.tag} est refusee.`, ephemeral: true });
   }
