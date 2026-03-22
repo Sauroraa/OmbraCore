@@ -3,6 +3,9 @@ const { EmbedBuilder } = require("discord.js");
 const { sendLog } = require("../services/logService");
 const { markRulesAccepted } = require("../services/profileService");
 const { fetchReactionContext } = require("../services/reactionRoleService");
+const { createLogger } = require("../utils/logger");
+
+const logger = createLogger("ReactionRole");
 
 function createValidationDmEmbed(guild, member, roleId, config) {
   const guildIcon = guild.iconURL({ extension: "png", size: 256 }) || undefined;
@@ -61,12 +64,36 @@ module.exports = {
 
     const member = await context.guild.members.fetch(user.id).catch(() => null);
     if (!member) {
+      logger.warn(`Member ${user.id} introuvable pour reaction role.`);
       return;
     }
 
     if (!member.roles.cache.has(context.roleId)) {
+      const role = await context.guild.roles.fetch(context.roleId).catch(() => null);
+      if (!role) {
+        return;
+      }
+
+      const botMember = await context.guild.members.fetchMe().catch(() => null);
+      if (!botMember) {
+        return;
+      }
+
+      if (!botMember.permissions.has("ManageRoles")) {
+        logger.warn("Le bot n'a pas la permission Gérer les rôles pour l'autorôle règlement.");
+        return;
+      }
+
+      if (botMember.roles.highest.comparePositionTo(role) <= 0) {
+        logger.warn(
+          `Le rôle cible ${context.roleId} est au-dessus ou au même niveau que le rôle du bot.`
+        );
+        return;
+      }
+
       const roleAdded = await member.roles.add(context.roleId).catch(() => null);
       if (!roleAdded) {
+        logger.warn(`Échec d'ajout du rôle ${context.roleId} à ${user.tag}.`);
         return;
       }
 
@@ -88,6 +115,8 @@ module.exports = {
           embeds: [createValidationDmEmbed(context.guild, member, context.roleId, client.runtimeConfig)]
         })
         .catch(() => null);
+
+      logger.info(`Rôle ${context.roleId} ajouté à ${user.tag} via réaction règlement.`);
 
       await sendLog(
         context.guild,
