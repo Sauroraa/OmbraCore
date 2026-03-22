@@ -134,6 +134,6 @@ module.exports = {
   reactions: {
     rulesMessageId: "1485325130598060132",
     rulesRoleId: "1485315803350827118",
-    rulesEmoji: "✅"
+    rulesEmoji: "cartel:1485344042995945542"
   }
 };

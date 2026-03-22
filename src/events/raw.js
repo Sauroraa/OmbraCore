@@ -21,7 +21,9 @@ module.exports = {
     const settings = resolveRulesReactionSettings(client);
     if (
       packet.d.message_id !== settings.targetMessageId ||
-      packet.d.emoji?.name !== settings.emoji ||
+      (settings.emoji.matchId
+        ? packet.d.emoji?.id !== settings.emoji.matchId
+        : packet.d.emoji?.name !== settings.emoji.matchName) ||
       !packet.d.guild_id ||
       !packet.d.user_id
     ) {

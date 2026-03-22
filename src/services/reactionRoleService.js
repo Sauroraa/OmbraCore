@@ -7,10 +7,37 @@ const { createLogger } = require("../utils/logger");
 const logger = createLogger("ReactionRole");
 const FALLBACK_RULES_MESSAGE_ID = "1485325130598060132";
 const FALLBACK_RULES_ROLE_ID = "1485315803350827118";
-const FALLBACK_RULES_EMOJI = "✅";
+const FALLBACK_RULES_EMOJI = "cartel:1485344042995945542";
+
+function normalizeEmojiConfig(value) {
+  const raw = String(value || "").trim();
+  const customMatch = raw.match(/^<?a?:?([a-zA-Z0-9_]+):(\d{17,20})>?$/);
+
+  if (customMatch) {
+    const [, name, id] = customMatch;
+    return {
+      raw,
+      reactValue: `${name}:${id}`,
+      matchName: name,
+      matchId: id,
+      isCustom: true
+    };
+  }
+
+  return {
+    raw,
+    reactValue: raw,
+    matchName: raw,
+    matchId: null,
+    isCustom: false
+  };
+}
 
 function resolveRulesReactionSettings(client) {
   const runtimeConfig = client?.runtimeConfig;
+  const emojiConfig = normalizeEmojiConfig(
+    runtimeConfig?.reactions?.rulesEmoji || FALLBACK_RULES_EMOJI
+  );
 
   return {
     targetMessageId:
@@ -19,7 +46,7 @@ function resolveRulesReactionSettings(client) {
       runtimeConfig?.reactions?.rulesRoleId ||
       runtimeConfig?.roles?.rulesReactionRole ||
       FALLBACK_RULES_ROLE_ID,
-    emoji: runtimeConfig?.reactions?.rulesEmoji || FALLBACK_RULES_EMOJI
+    emoji: emojiConfig
   };
 }
 
@@ -185,7 +212,11 @@ async function fetchReactionContext(reaction, client) {
     return null;
   }
 
-  if (reaction.emoji.name !== emoji) {
+  const emojiMatches = emoji.matchId
+    ? reaction.emoji.id === emoji.matchId
+    : reaction.emoji.name === emoji.matchName;
+
+  if (!emojiMatches) {
     return null;
   }
 
@@ -219,7 +250,7 @@ async function ensureRulesReaction(client) {
 
   client.runtimeConfig.reactions.rulesMessageId = targetMessageId;
   client.runtimeConfig.reactions.rulesRoleId = roleId;
-  client.runtimeConfig.reactions.rulesEmoji = emoji;
+  client.runtimeConfig.reactions.rulesEmoji = emoji.raw;
   client.runtimeConfig.roles.rulesReactionRole = roleId;
 
   const channels = await guild.channels.fetch().catch(() => null);
@@ -237,12 +268,14 @@ async function ensureRulesReaction(client) {
       continue;
     }
 
-    const alreadyExists = message.reactions.cache.some((reaction) => reaction.emoji.name === emoji);
+    const alreadyExists = message.reactions.cache.some((reaction) =>
+      emoji.matchId ? reaction.emoji.id === emoji.matchId : reaction.emoji.name === emoji.matchName
+    );
     if (!alreadyExists) {
-      await message.react(emoji).catch(() => null);
-      logger.info(`Reaction ${emoji} added to rules message ${targetMessageId}`);
+      await message.react(emoji.reactValue).catch(() => null);
+      logger.info(`Reaction ${emoji.reactValue} added to rules message ${targetMessageId}`);
     } else {
-      logger.info(`Reaction ${emoji} already present on rules message ${targetMessageId}`);
+      logger.info(`Reaction ${emoji.reactValue} already present on rules message ${targetMessageId}`);
     }
 
     if (client.rulesReactionCollector?.message?.id === message.id) {
@@ -252,7 +285,9 @@ async function ensureRulesReaction(client) {
     client.rulesReactionCollector?.stop("refresh");
     client.rulesReactionCollector = message.createReactionCollector({
       dispose: true,
-      filter: (reaction, user) => !user.bot && reaction.emoji.name === emoji
+      filter: (reaction, user) =>
+        !user.bot &&
+        (emoji.matchId ? reaction.emoji.id === emoji.matchId : reaction.emoji.name === emoji.matchName)
     });
 
     client.rulesReactionCollector.on("collect", async (_reaction, user) => {
