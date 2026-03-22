@@ -20,6 +20,8 @@ module.exports = {
 
     const settings = resolveRulesReactionSettings(client);
     if (
+      !settings.targetMessageId ||
+      !settings.emoji ||
       packet.d.message_id !== settings.targetMessageId ||
       (settings.emoji.matchId
         ? packet.d.emoji?.id !== settings.emoji.matchId

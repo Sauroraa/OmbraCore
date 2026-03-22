@@ -51,7 +51,7 @@ function createTicketPanel(config) {
     fields: [
       { name: "Support général", value: "Aide serveur, question, problème technique.", inline: true },
       { name: "Direction & signalement", value: "Contact sensible, plainte, situation interne.", inline: true },
-      { name: "Recrutement & externe", value: "Candidature, partenariat, prise de contact.", inline: true }
+      { name: "Contact externe", value: "Business, partenariat, prise de contact propre.", inline: true }
     ],
     color: 0x1a1a1a
   });
@@ -145,15 +145,6 @@ async function createTicket(interaction, client, selectedType) {
 
   if (!typeConfig) {
     await interaction.reply({ content: "Type de ticket invalide.", ephemeral: true });
-    return;
-  }
-
-  if (selectedType === "recruitment") {
-    const { createRecruitmentPortalPayload } = require("./recruitment");
-    await interaction.reply({
-      ...createRecruitmentPortalPayload(),
-      ephemeral: true
-    });
     return;
   }
 

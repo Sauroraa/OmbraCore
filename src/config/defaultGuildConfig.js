@@ -35,10 +35,10 @@ module.exports = {
   },
   channels: {
     welcome: "1485310617735663817",
-    rules: "",
+    rules: "1485315733318668359",
     validation: "",
     ticketPanel: "1485333822210834452",
-    recruitmentPanel: "",
+    recruitmentPanel: "1485333822210834452",
     farewellLog: "",
     applicationsLog: "",
     joinLog: "",
@@ -57,7 +57,7 @@ module.exports = {
   roles: {
     unverified: "",
     member: "",
-    rulesReactionRole: "1485315803350827118",
+    rulesReactionRole: "",
     candidate: "",
     partner: "",
     guest: "",
@@ -112,10 +112,6 @@ module.exports = {
         label: "Probleme membre",
         categoryId: "1485333181807984760"
       },
-      recruitment: {
-        label: "Ticket recrutement",
-        categoryId: "1485333280596430909"
-      },
       business_contact: {
         label: "Demande de Contact",
         categoryId: "1485346304329777303"
@@ -132,8 +128,8 @@ module.exports = {
     closeArchiveCategoryId: "1485333364310282342"
   },
   reactions: {
-    rulesMessageId: "1485325130598060132",
-    rulesRoleId: "1485315803350827118",
-    rulesEmoji: "cartel:1485344042995945542"
+    rulesMessageId: "",
+    rulesRoleId: "",
+    rulesEmoji: ""
   }
 };

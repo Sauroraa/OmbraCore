@@ -5,9 +5,6 @@ const { markRulesAccepted } = require("./profileService");
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("ReactionRole");
-const FALLBACK_RULES_MESSAGE_ID = "1485325130598060132";
-const FALLBACK_RULES_ROLE_ID = "1485315803350827118";
-const FALLBACK_RULES_EMOJI = "cartel:1485344042995945542";
 
 function normalizeEmojiConfig(value) {
   const raw = String(value || "").trim();
@@ -35,17 +32,12 @@ function normalizeEmojiConfig(value) {
 
 function resolveRulesReactionSettings(client) {
   const runtimeConfig = client?.runtimeConfig;
-  const emojiConfig = normalizeEmojiConfig(
-    runtimeConfig?.reactions?.rulesEmoji || FALLBACK_RULES_EMOJI
-  );
+  const rawEmoji = String(runtimeConfig?.reactions?.rulesEmoji || "").trim();
+  const emojiConfig = rawEmoji ? normalizeEmojiConfig(rawEmoji) : null;
 
   return {
-    targetMessageId:
-      runtimeConfig?.reactions?.rulesMessageId || FALLBACK_RULES_MESSAGE_ID,
-    roleId:
-      runtimeConfig?.reactions?.rulesRoleId ||
-      runtimeConfig?.roles?.rulesReactionRole ||
-      FALLBACK_RULES_ROLE_ID,
+    targetMessageId: String(runtimeConfig?.reactions?.rulesMessageId || "").trim(),
+    roleId: String(runtimeConfig?.reactions?.rulesRoleId || runtimeConfig?.roles?.rulesReactionRole || "").trim(),
     emoji: emojiConfig
   };
 }
@@ -87,6 +79,9 @@ async function applyRulesRole(client, guild, userId, sourceLabel, messageId) {
   }
 
   const { roleId } = resolveRulesReactionSettings(client);
+  if (!roleId) {
+    return false;
+  }
   const member = await guild.members.fetch(userId).catch(() => null);
   if (!member) {
     logger.warn(`Member ${userId} introuvable pour autorôle règlement (${sourceLabel}).`);
@@ -171,6 +166,9 @@ async function removeRulesRole(client, guild, userId, sourceLabel) {
   }
 
   const { roleId } = resolveRulesReactionSettings(client);
+  if (!roleId) {
+    return false;
+  }
   const member = await guild.members.fetch(userId).catch(() => null);
   if (!member || !member.roles.cache.has(roleId)) {
     return false;
@@ -204,7 +202,7 @@ async function fetchReactionContext(reaction, client) {
 
   const { targetMessageId, roleId, emoji } = resolveRulesReactionSettings(client);
 
-  if (!reaction.message?.guild || !targetMessageId || !roleId) {
+  if (!reaction.message?.guild || !targetMessageId || !roleId || !emoji) {
     return null;
   }
 
@@ -237,7 +235,7 @@ async function ensureRulesReaction(client) {
   const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
   const { targetMessageId, roleId, emoji } = resolveRulesReactionSettings(client);
 
-  if (!guild || !targetMessageId || !roleId) {
+  if (!guild || !targetMessageId || !roleId || !emoji) {
     return;
   }
 
