@@ -757,6 +757,12 @@ async function manageRecruitmentTicketsForApplication({
     await member.send(dmMessage).catch(() => null);
   }
 
+  if (mode === "delete") {
+    application.adminHidden = true;
+    application.hiddenAt = new Date();
+    await application.save();
+  }
+
   await sendLog(
     guild,
     client.runtimeConfig.channels?.applicationsLog,

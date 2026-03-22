@@ -643,7 +643,7 @@ async function buildPortalState(client, user, requestedView, submitted) {
     ];
 
     if (portal.isAdmin) {
-      queries.push(Application.find({ guildId }).sort({ createdAt: -1 }).limit(50).lean());
+      queries.push(Application.find({ guildId, adminHidden: { $ne: true } }).sort({ createdAt: -1 }).limit(50).lean());
     }
 
     const [profile, application, ticket, lockedApplication, adminApplications = []] = await Promise.all(queries);
@@ -717,6 +717,8 @@ function serializeApplication(application) {
     createdAt: application.createdAt || null,
     updatedAt: application.updatedAt || null,
     reviewedAt: application.reviewedAt || null,
+    adminHidden: Boolean(application.adminHidden),
+    hiddenAt: application.hiddenAt || null,
     score: application.score || 0,
     quizScore: application.quizScore || 0,
     ageIrl: application.ageIrl || null,

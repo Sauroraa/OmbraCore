@@ -23,6 +23,8 @@ const applicationSchema = new mongoose.Schema(
     },
     interviewScheduledFor: { type: Date, default: null },
     interviewMessage: { type: String, default: "" },
+    adminHidden: { type: Boolean, default: false },
+    hiddenAt: { type: Date, default: null },
     reviewedBy: { type: String, default: null },
     reviewedAt: { type: Date, default: null }
   },
