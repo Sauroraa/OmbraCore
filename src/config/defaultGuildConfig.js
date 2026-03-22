@@ -1,19 +1,37 @@
 module.exports = {
   brand: {
     name: "OmbraCore",
-    footer: "OmbraCore • Societa Ombra"
+    footer: "OmbraCore • Società Ombra",
+    primaryColor: 1447446,
+    footerIcon: ""
   },
   messages: {
-    welcomeTitle: "Bienvenue au sein de Societa Ombra",
+    welcomeTitle: "Bienvenue dans l’ombre",
     welcomeDescription:
-      "Bienvenue {user}\nAvant d'acceder au serveur, prends connaissance du reglement et valide-le pour rejoindre officiellement la communaute.",
-    welcomeAmbientLine: "Une arrivee propre, un cadre serieux, une structure sous controle.",
+      "Bienvenue {user} au sein de **{server}**.\n\nAvant d’accéder à l’ensemble du serveur, prends connaissance du règlement et valide ton accès pour rejoindre officiellement la structure.\n\n> Ici, chaque entrée compte. Le cadre passe avant tout.",
+    welcomeAmbientLine: "Une arrivée discrète. Un cadre sérieux. Une structure sous contrôle.",
+    welcomeRulesLabel: "Lire le règlement",
+    welcomeValidateLabel: "Valider l’accès",
+    welcomeAccessLabel: "Débloquer les salons",
+    welcomeGuidanceTitle: "Parcours d’intégration",
+    welcomeGuidanceText:
+      "Prends le temps de lire, valider et t’orienter. Une entrée propre facilite tout le reste.",
+    welcomeOrientationTitle: "Repères",
+    welcomeOrientationText:
+      "Le staff conserve une traçabilité complète des validations et accompagne les nouveaux membres si nécessaire.",
+    rulesButtonLabel: "Voir le règlement",
+    rulesButtonUrl: "",
+    welcomeInviteButtonLabel: "Découvrir la structure",
+    welcomeInviteButtonUrl: "",
     welcomeDmEnabled: false,
-    rulesTitle: "Reglement de Societa Ombra",
+    rulesTitle: "Règlement de Società Ombra",
     rulesDescription:
-      "Lis attentivement le reglement du serveur. L'acces complet est reserve aux membres qui valident les regles.",
+      "Lis attentivement le règlement du serveur. L’accès complet est réservé aux membres qui valident les règles.",
     rulesSanctions:
-      "Le non-respect du reglement peut entrainer un avertissement, un mute ou un bannissement."
+      "Le non-respect du règlement peut entraîner un avertissement, un mute ou un bannissement."
+  },
+  images: {
+    welcomeBanner: ""
   },
   channels: {
     welcome: "1485310617735663817",
