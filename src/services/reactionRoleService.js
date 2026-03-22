@@ -1,6 +1,23 @@
 const { createLogger } = require("../utils/logger");
 
 const logger = createLogger("ReactionRole");
+const FALLBACK_RULES_MESSAGE_ID = "1485325130598060132";
+const FALLBACK_RULES_ROLE_ID = "1485315803350827118";
+const FALLBACK_RULES_EMOJI = "✅";
+
+function resolveRulesReactionSettings(client) {
+  const runtimeConfig = client?.runtimeConfig;
+
+  return {
+    targetMessageId:
+      runtimeConfig?.reactions?.rulesMessageId || FALLBACK_RULES_MESSAGE_ID,
+    roleId:
+      runtimeConfig?.reactions?.rulesRoleId ||
+      runtimeConfig?.roles?.rulesReactionRole ||
+      FALLBACK_RULES_ROLE_ID,
+    emoji: runtimeConfig?.reactions?.rulesEmoji || FALLBACK_RULES_EMOJI
+  };
+}
 
 async function fetchReactionContext(reaction, client) {
   if (!reaction || !client?.runtimeConfig) {
@@ -14,10 +31,7 @@ async function fetchReactionContext(reaction, client) {
     }
   }
 
-  const config = client.runtimeConfig;
-  const targetMessageId = config.reactions?.rulesMessageId;
-  const roleId = config.reactions?.rulesRoleId || config.roles?.rulesReactionRole;
-  const emoji = config.reactions?.rulesEmoji || "✅";
+  const { targetMessageId, roleId, emoji } = resolveRulesReactionSettings(client);
 
   if (!reaction.message?.guild || !targetMessageId || !roleId) {
     return null;
@@ -46,12 +60,23 @@ async function ensureRulesReaction(client) {
   }
 
   const guild = await client.guilds.fetch(process.env.GUILD_ID).catch(() => null);
-  const targetMessageId = client.runtimeConfig?.reactions?.rulesMessageId;
-  const emoji = client.runtimeConfig?.reactions?.rulesEmoji || "✅";
+  const { targetMessageId, roleId, emoji } = resolveRulesReactionSettings(client);
 
-  if (!guild || !targetMessageId) {
+  if (!guild || !targetMessageId || !roleId) {
     return;
   }
+
+  if (!client.runtimeConfig.reactions) {
+    client.runtimeConfig.reactions = {};
+  }
+  if (!client.runtimeConfig.roles) {
+    client.runtimeConfig.roles = {};
+  }
+
+  client.runtimeConfig.reactions.rulesMessageId = targetMessageId;
+  client.runtimeConfig.reactions.rulesRoleId = roleId;
+  client.runtimeConfig.reactions.rulesEmoji = emoji;
+  client.runtimeConfig.roles.rulesReactionRole = roleId;
 
   const channels = await guild.channels.fetch().catch(() => null);
   if (!channels) {
@@ -72,6 +97,8 @@ async function ensureRulesReaction(client) {
     if (!alreadyExists) {
       await message.react(emoji).catch(() => null);
       logger.info(`Reaction ${emoji} added to rules message ${targetMessageId}`);
+    } else {
+      logger.info(`Reaction ${emoji} already present on rules message ${targetMessageId}`);
     }
     return;
   }
