@@ -29,19 +29,31 @@ function createTicketPanel(config) {
   const options = Object.entries(config.tickets?.types || {}).map(([value, item]) => ({
     label: item.label,
     value,
-    description: `Canal prive pour ${item.label.toLowerCase()}`
+    description: `Canal privé pour ${item.label.toLowerCase()}`
   }));
 
-  const embed = createBaseEmbed({
-    title: "Cellule de contact securisee",
+  const introEmbed = createBaseEmbed({
+    title: "Cellule de contact sécurisée",
     description:
-      "Selectionne la nature de ta demande pour ouvrir un canal prive, discret et traite par l'equipe concernee.\n\nChaque dossier est encadre, journalise et reserve aux personnes autorisees.",
+      "Sélectionne la nature de ta demande pour ouvrir un canal privé, discret et traité par l’équipe concernée.\n\nChaque dossier est encadré, journalisé et réservé aux personnes autorisées.",
     fields: [
-      { name: "Traitement", value: "Prise en charge propre par le staff adapte.", inline: true },
-      { name: "Confidentialite", value: "Salon prive avec acces limite.", inline: true },
-      { name: "Cadre", value: "Structure claire, reponse rapide, suivi propre.", inline: true }
+      { name: "Traitement", value: "Prise en charge nette par le pôle adapté.", inline: true },
+      { name: "Confidentialité", value: "Salon privé à accès strictement limité.", inline: true },
+      { name: "Cadre", value: "Suivi sérieux, réponse claire, dossier propre.", inline: true }
     ],
-    color: 0x181818
+    color: 0x111111
+  });
+
+  const detailEmbed = createBaseEmbed({
+    title: "Procédure d’ouverture",
+    description:
+      "Choisis simplement un motif ci-dessous.\nOmbraCore crée ensuite un espace réservé entre toi et l’équipe concernée.",
+    fields: [
+      { name: "Support général", value: "Aide serveur, question, problème technique.", inline: true },
+      { name: "Direction & signalement", value: "Contact sensible, plainte, situation interne.", inline: true },
+      { name: "Recrutement & externe", value: "Candidature, partenariat, prise de contact.", inline: true }
+    ],
+    color: 0x1a1a1a
   });
 
   const row = new ActionRowBuilder().addComponents(
@@ -51,7 +63,7 @@ function createTicketPanel(config) {
       .addOptions(options.slice(0, 25))
   );
 
-  return { embeds: [embed], components: [row] };
+  return { embeds: [introEmbed, detailEmbed], components: [row] };
 }
 
 async function getNextTicketNumberFromGuild(guildId) {
@@ -131,9 +143,26 @@ async function createTicket(interaction, client, selectedType) {
   });
 
   const embed = createBaseEmbed({
-    title: `Ticket ${typeConfig.label}`,
-    description: `${interaction.user} ton ticket a ete cree. Un membre du staff peut maintenant le prendre en charge.`,
-    fields: [{ name: "Motif", value: typeConfig.label, inline: true }]
+    title: "Dossier ouvert",
+    description:
+      `${interaction.user}, ton espace privé est maintenant en place.\nLe staff concerné peut prendre ce dossier en charge et assurer le suivi dans de bonnes conditions.`,
+    fields: [
+      { name: "Motif", value: typeConfig.label, inline: true },
+      { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
+      { name: "Statut", value: "En attente de prise en charge", inline: true }
+    ],
+    color: 0x121212
+  });
+
+  const guideEmbed = createBaseEmbed({
+    title: "Cadre du salon",
+    description:
+      "Expose ta demande de manière claire et complète.\nÉvite les messages inutiles pour garder un traitement rapide, discret et propre.",
+    fields: [
+      { name: "Conseil", value: "Présente les faits, les noms utiles et le contexte.", inline: false },
+      { name: "Gestion", value: "Le staff peut prendre, fermer ou archiver le dossier.", inline: false }
+    ],
+    color: 0x1d1d1d
   });
 
   const row = new ActionRowBuilder().addComponents(
@@ -147,7 +176,7 @@ async function createTicket(interaction, client, selectedType) {
     new ButtonBuilder().setCustomId(TICKET_TRANSCRIPT).setLabel("Transcript").setStyle(ButtonStyle.Secondary)
   );
 
-  await channel.send({ embeds: [embed], components: [row, rowTwo] });
+  await channel.send({ embeds: [embed, guideEmbed], components: [row, rowTwo] });
 
   await sendLog(
     interaction.guild,
