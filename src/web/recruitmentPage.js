@@ -74,6 +74,9 @@ function renderRecruitmentPage({
       useEffect(() => { localStorage.setItem(draftStorageKey, JSON.stringify(draft)); }, [draft]);
       const app = state.portal?.latestApplication || null;
       const ticket = state.portal?.latestRecruitmentTicket || null;
+      const safeAnswers = Array.isArray(app?.answers) ? app.answers : [];
+      const safeStatusLabel = app?.status?.label || 'Transmis';
+      const safeQuizScore = Number.isFinite(app?.quizScore) ? app.quizScore : 0;
       const rulesAccepted = Boolean(state.portal?.rulesAccepted);
       const recruitmentLocked = Boolean(state.portal?.recruitmentLocked);
       const lockReason = state.portal?.lockReason || '';
@@ -198,7 +201,53 @@ function renderRecruitmentPage({
               </div>
               {app.notes ? <div className='alert info' style={{marginTop:'16px'}}>{app.notes}</div> : null}
               <div className='answers-list'>
-                {app.answers.slice(0, 8).map((item, index) => (
+                {safeAnswers.slice(0, 8).map((item, index) => (
+                  <div className='answer-item' key={item.question + index}>
+                    <strong>{item.question}</strong>
+                    <span>{item.answer}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      );
+
+      const ConfirmationView = () => (
+        <div className='grid'>
+          <div className='status-band tone-success'>
+            <div>
+              <small style={{display:'block',color:'var(--muted)',marginBottom:'6px'}}>Transmission scellée</small>
+              <strong style={{fontSize:'1.2rem'}}>Le dossier a été transmis correctement.</strong>
+              <div style={{color:'var(--muted)',marginTop:'8px'}}>
+                OmbraCore a enregistré le dossier, calculé le score du questionnaire et poussé la candidature dans le circuit recrutement Discord.
+              </div>
+            </div>
+            <div className='top-actions'>
+              <button type='button' className='btn primary' onClick={() => setView('status')}>Voir le statut du dossier</button>
+              <button type='button' className='btn' onClick={() => setView('dossier')}>Retour au dossier</button>
+            </div>
+          </div>
+          <div className='dashboard-grid'>
+            <div className='card'><small>Statut</small><strong>{app ? safeStatusLabel : 'Transmis'}</strong></div>
+            <div className='card'><small>Score questionnaire</small><strong>{app ? safeQuizScore + '/25' : 'En cours'}</strong></div>
+            <div className='card'><small>Référence ticket</small><strong>{ticket ? '#' + String(ticket.ticketNumber).padStart(4, '0') : 'Création en cours'}</strong></div>
+            <div className='card'><small>Dernière transmission</small><strong>{app ? formatDate(app.updatedAt) : formatDate(new Date())}</strong></div>
+          </div>
+          <div className='panel'>
+            <h3>Lecture côté staff</h3>
+            <p>Le ticket recrutement reçoit automatiquement un résumé staff, le score du questionnaire et les réponses regroupées dans un format lisible. Tu n’as rien d’autre à faire pour le moment.</p>
+            <div className='meta-grid' style={{marginTop:'16px'}}>
+              <div className='meta'><small>Questionnaire</small><strong>{app ? safeQuizScore + '/25' : 'N/A'}</strong></div>
+              <div className='meta'><small>Ticket</small><strong>{ticket ? 'Ouvert' : 'En attente'}</strong></div>
+              <div className='meta'><small>Suivi</small><strong>DM + portail</strong></div>
+            </div>
+          </div>
+          {app ? (
+            <div className='panel'>
+              <h3>Aperçu rapide du dossier</h3>
+              <div className='answers-list'>
+                {safeAnswers.slice(0, 6).map((item, index) => (
                   <div className='answer-item' key={item.question + index}>
                     <strong>{item.question}</strong>
                     <span>{item.answer}</span>
@@ -265,6 +314,33 @@ function renderRecruitmentPage({
                   </div>
                   <div className='top-actions'>
                     <button type='submit' className='btn'>Envoyer la convocation</button>
+                  </div>
+                </form>
+                <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/reset-ticket'}>
+                  <h4>Réinitialisation ticket</h4>
+                  <p style={{margin:'0',color:'var(--muted)',lineHeight:'1.7'}}>
+                    Supprime le ticket recrutement ou l’entretien déjà présent, nettoie l’ancien circuit, puis recrée un ticket propre avec réinjection complète du dossier.
+                  </p>
+                  <div className='top-actions'>
+                    <button type='submit' className='btn danger'>Réinitialiser le ticket</button>
+                  </div>
+                </form>
+                <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/archive-tickets'}>
+                  <h4>Archivage tickets</h4>
+                  <p style={{margin:'0',color:'var(--muted)',lineHeight:'1.7'}}>
+                    Ferme et archive tous les tickets recrutement ou entretiens liés à ce candidat sans les recréer.
+                  </p>
+                  <div className='top-actions'>
+                    <button type='submit' className='btn'>Archiver les tickets</button>
+                  </div>
+                </form>
+                <form className='admin-form' method='POST' action={adminUrl + '/recruitment/' + item.id + '/delete-tickets'}>
+                  <h4>Suppression tickets</h4>
+                  <p style={{margin:'0',color:'var(--muted)',lineHeight:'1.7'}}>
+                    Supprime les tickets recrutement en trop ou restants et nettoie leur état en base.
+                  </p>
+                  <div className='top-actions'>
+                    <button type='submit' className='btn danger'>Supprimer les tickets</button>
                   </div>
                 </form>
               </div>
@@ -361,9 +437,14 @@ function renderRecruitmentPage({
         dossier: ['Mon dossier', 'Suivi du dossier candidat et accès rapide au formulaire.'],
         form: ['Formulaire', 'Dossier candidat complet, questionnaire inclus et transmission directe.'],
         status: ['Statut', 'État de traitement du dossier candidat.'],
+        confirmation: ['Transmission', 'Résumé clair du dossier envoyé et du ticket recrutement.'],
         access: ['Connexion Discord', 'Validation de session avant accès au portail.'],
         admin: ['Gestion', 'Pilotage staff des candidatures et convocations recrutement.']
       };
+
+      const pageTitle = Array.isArray(titles[view]) ? titles[view] : titles.home;
+      const pageHeading = pageTitle?.[0] || titles.home[0];
+      const pageDescription = pageTitle?.[1] || titles.home[1];
 
       return (
         <div className='app'>
@@ -387,7 +468,7 @@ function renderRecruitmentPage({
           </aside>
           <main className='main'>
             <div className='topbar'>
-              <div className='page-title'><h1>{titles[view][0]}</h1><p>{titles[view][1]}</p></div>
+              <div className='page-title'><h1>{pageHeading}</h1><p>{pageDescription}</p></div>
               <div className='top-actions'>
                 <button type='button' className='btn ghost' onClick={() => setView('home')}>Accueil</button>
                 <button type='button' className='btn' onClick={() => setView(state.user ? 'form' : 'access')}>Accéder au recrutement</button>
@@ -395,12 +476,13 @@ function renderRecruitmentPage({
               </div>
             </div>
             {state.error ? <div className='alert error'>{state.error}</div> : null}
-            {state.submitted ? <div className='alert success'>Votre dossier a été transmis avec succès. OmbraCore a ouvert automatiquement le ticket recrutement sur Discord.</div> : null}
+            {state.submitted && view !== 'confirmation' ? <div className='alert success'>Votre dossier a été transmis avec succès. OmbraCore a ouvert automatiquement le ticket recrutement sur Discord.</div> : null}
             {view === 'home' ? HomeView() : null}
             {view === 'access' ? AccessView() : null}
             {view === 'dossier' ? DossierView() : null}
             {view === 'form' ? FormView() : null}
             {view === 'status' ? StatusView() : null}
+            {view === 'confirmation' ? ConfirmationView() : null}
             {view === 'admin' ? AdminView() : null}
           </main>
         </div>

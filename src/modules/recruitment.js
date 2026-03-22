@@ -174,29 +174,148 @@ function createApplicationReviewRow(applicationId) {
   );
 }
 
+function truncateField(value, max = 1024) {
+  if (!value) {
+    return "Non renseigné";
+  }
+
+  return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+}
+
+function chunkArray(items, size) {
+  const chunks = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function splitOverviewAnswers(answers = []) {
+  return {
+    identity: answers.slice(0, 5),
+    profile: answers.slice(5, 11),
+    rp: answers.slice(11, 19),
+    quiz: answers.slice(19)
+  };
+}
+
+function createFieldSectionEmbed(title, description, color, answers) {
+  return createBaseEmbed({
+    title,
+    description,
+    fields: answers.map((item) => ({
+      name: item.question.slice(0, 256),
+      value: truncateField(item.answer),
+      inline: false
+    })),
+    color
+  });
+}
+
+function buildAnswerBlock(item, index, answerLimit = 700) {
+  const answer = truncateField(item.answer, answerLimit);
+  return `**${index + 1}. ${item.question}**\n${answer}`;
+}
+
+function createDescriptionSectionEmbeds(title, description, color, answers, answerLimit = 700) {
+  const embeds = [];
+  const blocks = answers.map((item, index) => buildAnswerBlock(item, index, answerLimit));
+  let currentBlocks = [];
+  let currentLength = description.length;
+
+  for (const block of blocks) {
+    const nextLength = currentLength + block.length + 2;
+
+    if (currentBlocks.length && nextLength > 3900) {
+      embeds.push(
+        createBaseEmbed({
+          title: embeds.length === 0 ? title : `${title} • Suite ${embeds.length + 1}`,
+          description: [description, ...currentBlocks].join("\n\n"),
+          color
+        })
+      );
+      currentBlocks = [block];
+      currentLength = description.length + block.length + 2;
+      continue;
+    }
+
+    currentBlocks.push(block);
+    currentLength = nextLength;
+  }
+
+  if (currentBlocks.length) {
+    embeds.push(
+      createBaseEmbed({
+        title: embeds.length === 0 ? title : `${title} • Suite ${embeds.length + 1}`,
+        description: [description, ...currentBlocks].join("\n\n"),
+        color
+      })
+    );
+  }
+
+  return embeds;
+}
+
 function createRecruitmentSubmissionEmbeds({ userMention, ticketNumber, typeLabel, score, answers, sourceLabel }) {
+  const groupedEmbeds = [];
+  const { identity, profile, rp, quiz } = splitOverviewAnswers(answers);
+  const scoreValue = Number.isFinite(score) ? score : 0;
+  const scoreTone =
+    scoreValue >= 20
+      ? "Seuil de validation atteint pour la transmission."
+      : "Score sous le seuil automatique, lecture staff recommandée.";
+
   const coverEmbed = createBaseEmbed({
     title: "Dossier de recrutement • Società Ombra",
     description:
-      `${userMention}, ton dossier a été enregistré et transmis dans un salon privé.\nChaque réponse a été structurée automatiquement par OmbraCore pour une lecture propre par le staff.`,
+      `${userMention}, le dossier a été transmis dans le circuit recrutement.\nTout le contenu est regroupé ci-dessous pour une lecture staff plus propre et plus rapide.`,
     fields: [
       { name: "Référence", value: `#${String(ticketNumber).padStart(4, "0")}`, inline: true },
       { name: "Motif", value: typeLabel, inline: true },
-      { name: "Évaluation", value: `Score initial ${score}`, inline: true },
-      { name: "Source", value: sourceLabel, inline: true }
+      { name: "Score questionnaire", value: `${scoreValue}/25`, inline: true },
+      { name: "Source", value: sourceLabel, inline: true },
+      { name: "Questions transmises", value: `${answers.length}`, inline: true },
+      { name: "Évaluation", value: scoreTone, inline: false }
     ],
     color: 0x16120f
   });
 
-  const sectionEmbeds = answers.map((item) =>
-    createBaseEmbed({
-      title: item.question,
-      description: item.answer.slice(0, 4096),
-      color: 0x1c1a18
-    })
-  );
+  groupedEmbeds.push(coverEmbed);
 
-  return [coverEmbed, ...sectionEmbeds];
+  if (identity.length || profile.length) {
+    groupedEmbeds.push(
+      createFieldSectionEmbed(
+        "Synthèse candidat",
+        "Identité RP, profil joueur et éléments immédiats à lire en priorité.",
+        0x1a1816,
+        [...identity, ...profile]
+      )
+    );
+  }
+
+  if (rp.length) {
+    groupedEmbeds.push(...createDescriptionSectionEmbeds(
+      "Lecture RP et engagement",
+      "Motivation, comportement, disponibilité et engagement du candidat.",
+      0x201c18,
+      rp,
+      650
+    ));
+  }
+
+  if (quiz.length) {
+    groupedEmbeds.push(...createDescriptionSectionEmbeds(
+      "Questionnaire Ombra",
+      "Réponses au questionnaire lore, règlement et compréhension de la Società.",
+      0x181716,
+      quiz,
+      220
+    ));
+  }
+
+  return groupedEmbeds.slice(0, 10);
 }
 
 function chunkEmbeds(embeds, size = 10) {
@@ -504,6 +623,155 @@ async function submitRecruitmentTicketForm(interaction, client) {
   await interaction.reply({ content: `Dossier enregistré. Ton ticket recrutement est prêt : ${channel}`, ephemeral: true });
 }
 
+async function resetRecruitmentTicketForApplication({
+  client,
+  guild,
+  application,
+  actorId = null,
+  actorLabel = "Staff web"
+}) {
+  const member = await guild.members.fetch(application.userId).catch(() => null);
+  if (!member) {
+    throw new Error("Le candidat n'est plus présent sur le serveur Discord.");
+  }
+
+  const existingTickets = await Ticket.find({
+    guildId: guild.id,
+    authorId: application.userId,
+    type: "recruitment",
+    status: { $ne: "deleted" }
+  });
+
+  for (const ticket of existingTickets) {
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+
+    if (channel) {
+      await channel.delete(`Réinitialisation recrutement par ${actorLabel}`).catch(() => null);
+    }
+
+    ticket.status = "deleted";
+    ticket.closedAt = new Date();
+    await ticket.save();
+  }
+
+  const answers = Array.isArray(application.answers) ? application.answers : [];
+  if (!answers.length) {
+    throw new Error("Cette candidature ne contient aucune réponse exploitable.");
+  }
+
+  const score = Number.isFinite(application.quizScore) ? application.quizScore : application.score || 0;
+  const result = await dispatchRecruitmentSubmission({
+    guild,
+    member,
+    client,
+    application,
+    answers,
+    score,
+    sourceLabel: `Portail admin • Réinitialisation`,
+    forceIntoExisting: false
+  });
+
+  await member.send(
+    `Ton ticket recrutement Società Ombra a été réinitialisé par le staff.\nNouvelle référence : #${String(result.ticketNumber).padStart(4, "0")}.`
+  ).catch(() => null);
+
+  await sendLog(
+    guild,
+    client.runtimeConfig.channels?.applicationsLog,
+    "Ticket recrutement réinitialisé",
+    `${actorLabel} a réinitialisé le circuit recrutement de ${member.user.tag}.`,
+    [
+      { name: "Candidat", value: `${member}`, inline: true },
+      { name: "Nouvelle référence", value: `#${String(result.ticketNumber).padStart(4, "0")}`, inline: true },
+      { name: "Canal", value: `${result.channel}`, inline: true }
+    ]
+  );
+
+  return result;
+}
+
+async function manageRecruitmentTicketsForApplication({
+  client,
+  guild,
+  application,
+  mode,
+  actorLabel = "Staff web"
+}) {
+  const tickets = await Ticket.find({
+    guildId: guild.id,
+    authorId: application.userId,
+    type: "recruitment",
+    status: { $ne: "deleted" }
+  }).sort({ createdAt: 1 });
+
+  if (!tickets.length) {
+    throw new Error("Aucun ticket recrutement actif ou archivable n'est lié à cette candidature.");
+  }
+
+  const member = await guild.members.fetch(application.userId).catch(() => null);
+  let processedCount = 0;
+
+  for (const ticket of tickets) {
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+
+    if (mode === "archive") {
+      ticket.status = "closed";
+      ticket.closedAt = new Date();
+      await ticket.save();
+
+      if (channel && client.runtimeConfig.tickets?.closeArchiveCategoryId) {
+        await channel.setParent(client.runtimeConfig.tickets.closeArchiveCategoryId).catch(() => null);
+      }
+
+      if (channel?.isTextBased()) {
+        await channel.send({
+          embeds: [
+            createBaseEmbed({
+              title: "Archivage staff appliqué",
+              description: `Le circuit recrutement est maintenant archivé par ${actorLabel}.`,
+              color: 0x1b2230
+            })
+          ]
+        }).catch(() => null);
+      }
+    } else if (mode === "delete") {
+      ticket.status = "deleted";
+      ticket.closedAt = new Date();
+      await ticket.save();
+
+      if (channel) {
+        await channel.delete(`Suppression recrutement par ${actorLabel}`).catch(() => null);
+      }
+    } else {
+      throw new Error("Mode de gestion ticket invalide.");
+    }
+
+    processedCount += 1;
+  }
+
+  if (member) {
+    const dmMessage =
+      mode === "archive"
+        ? `Le staff Società Ombra a archivé ton circuit recrutement (${processedCount} salon(s)).`
+        : `Le staff Società Ombra a supprimé ton ancien circuit recrutement (${processedCount} salon(s)).`;
+    await member.send(dmMessage).catch(() => null);
+  }
+
+  await sendLog(
+    guild,
+    client.runtimeConfig.channels?.applicationsLog,
+    mode === "archive" ? "Tickets recrutement archivés" : "Tickets recrutement supprimés",
+    `${actorLabel} a ${mode === "archive" ? "archivé" : "supprimé"} ${processedCount} ticket(s) recrutement liés à la candidature ${application.id}.`,
+    [
+      { name: "Candidature", value: `${application.id}`, inline: true },
+      { name: "Salons traités", value: `${processedCount}`, inline: true },
+      { name: "Action", value: mode === "archive" ? "Archivage" : "Suppression", inline: true }
+    ]
+  );
+
+  return { processedCount };
+}
+
 module.exports = {
   createRecruitmentPanel,
   createRecruitmentModal,
@@ -515,5 +783,7 @@ module.exports = {
   submitRecruitmentTicketForm,
   reviewApplication,
   contactApplicant,
-  createInterviewTicket
+  createInterviewTicket,
+  resetRecruitmentTicketForApplication,
+  manageRecruitmentTicketsForApplication
 };

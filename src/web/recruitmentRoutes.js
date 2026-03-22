@@ -3,7 +3,11 @@ const crypto = require("node:crypto");
 const Application = require("../models/Application");
 const Ticket = require("../models/Ticket");
 const UserProfile = require("../models/UserProfile");
-const { dispatchRecruitmentSubmission } = require("../modules/recruitment");
+const {
+  dispatchRecruitmentSubmission,
+  resetRecruitmentTicketForApplication,
+  manageRecruitmentTicketsForApplication
+} = require("../modules/recruitment");
 const {
   applyApplicationStatus,
   scheduleApplicationInterview
@@ -519,6 +523,93 @@ function registerRecruitmentRoutes(app, client) {
     } catch (error) {
       const state = await buildPortalState(client, user, "admin", false);
       res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de fixer l'horaire de recrutement." }));
+    }
+  });
+
+  app.post("/admin/recruitment/:applicationId/reset-ticket", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    try {
+      const application = await Application.findById(req.params.applicationId);
+      if (!application) {
+        throw new Error("Candidature introuvable.");
+      }
+
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      await resetRecruitmentTicketForApplication({
+        client,
+        guild,
+        application,
+        actorId: user.id,
+        actorLabel: `${user.username}#${user.discriminator || "0000"}`
+      });
+
+      res.redirect("/admin");
+    } catch (error) {
+      const state = await buildPortalState(client, user, "admin", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de réinitialiser le ticket recrutement." }));
+    }
+  });
+
+  app.post("/admin/recruitment/:applicationId/archive-tickets", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    try {
+      const application = await Application.findById(req.params.applicationId);
+      if (!application) {
+        throw new Error("Candidature introuvable.");
+      }
+
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      await manageRecruitmentTicketsForApplication({
+        client,
+        guild,
+        application,
+        mode: "archive",
+        actorLabel: `${user.username}#${user.discriminator || "0000"}`
+      });
+
+      res.redirect("/admin");
+    } catch (error) {
+      const state = await buildPortalState(client, user, "admin", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible d'archiver les tickets recrutement." }));
+    }
+  });
+
+  app.post("/admin/recruitment/:applicationId/delete-tickets", async (req, res) => {
+    const user = readSession(req);
+    if (!isAdminUser(user)) {
+      res.redirect("/recruitment");
+      return;
+    }
+
+    try {
+      const application = await Application.findById(req.params.applicationId);
+      if (!application) {
+        throw new Error("Candidature introuvable.");
+      }
+
+      const guild = await client.guilds.fetch(process.env.GUILD_ID);
+      await manageRecruitmentTicketsForApplication({
+        client,
+        guild,
+        application,
+        mode: "delete",
+        actorLabel: `${user.username}#${user.discriminator || "0000"}`
+      });
+
+      res.redirect("/admin");
+    } catch (error) {
+      const state = await buildPortalState(client, user, "admin", false);
+      res.type("html").status(400).send(renderRecruitmentPage({ ...state, error: error.message || "Impossible de supprimer les tickets recrutement." }));
     }
   });
 }
