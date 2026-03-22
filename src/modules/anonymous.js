@@ -7,9 +7,9 @@ async function submitAnonymousMessage(interaction, client) {
   const config = client.runtimeConfig;
   const guildId = interaction.guild.id;
   const authorId = interaction.user.id;
-  const targetChannelId = interaction.options.getChannel("salon", true).id;
-  const priority = interaction.options.getString("priorite", true).trim().toLowerCase();
-  const anonymousSignature = interaction.options.getBoolean("signature") ?? true;
+  const targetChannelId = interaction.channelId;
+  const priority = "medium";
+  const anonymousSignature = true;
   const message = interaction.options.getString("message", true).trim();
   const blockedWords = config.automod?.blockedWords || [];
   const restrictedRoles = [config.roles?.unverified].filter(Boolean);
@@ -42,11 +42,14 @@ async function submitAnonymousMessage(interaction, client) {
   }
 
   const embed = createBaseEmbed({
-    title: "Message anonyme",
+    title: "Transmission anonyme",
     description: message,
-    fields: [{ name: "Priorite", value: priority, inline: true }],
-    color: priority === "high" ? 0x9b111e : 0x353535
-  });
+    fields: [
+      { name: "Canal", value: "Diffusion sécurisée dans ce salon", inline: true },
+      { name: "Statut", value: "Origine masquée pour les membres", inline: true }
+    ],
+    color: 0x171717
+  }).setFooter({ text: "OmbraCore • Transmission sécurisée" });
 
   await targetChannel.send({ embeds: [embed] });
 
@@ -72,16 +75,15 @@ async function submitAnonymousMessage(interaction, client) {
   await sendLog(
     interaction.guild,
     config.channels?.anonymousLog,
-    "Message anonyme trace",
+    "Message anonyme tracé",
     `${interaction.user.tag} a utilise /ano.`,
     [
       { name: "Salon cible", value: `<#${targetChannelId}>`, inline: true },
-      { name: "Priorite", value: priority, inline: true },
       { name: "Contenu", value: message.slice(0, 1024) }
     ]
   );
 
-  await interaction.reply({ content: "Message anonyme envoye.", ephemeral: true });
+  await interaction.reply({ content: "Transmission anonyme effectuée.", ephemeral: true });
 }
 
 module.exports = {
