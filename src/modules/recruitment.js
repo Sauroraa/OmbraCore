@@ -198,6 +198,27 @@ function createRecruitmentSubmissionEmbeds({ userMention, ticketNumber, typeLabe
   return [coverEmbed, ...sectionEmbeds];
 }
 
+function chunkEmbeds(embeds, size = 10) {
+  const chunks = [];
+
+  for (let index = 0; index < embeds.length; index += size) {
+    chunks.push(embeds.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+async function sendEmbedsInChunks(channel, embeds, components = []) {
+  const chunks = chunkEmbeds(embeds, 10);
+
+  for (const [index, chunk] of chunks.entries()) {
+    await channel.send({
+      embeds: chunk,
+      components: index === 0 ? components : []
+    });
+  }
+}
+
 async function dispatchRecruitmentSubmission({
   guild,
   member,
@@ -229,12 +250,12 @@ async function dispatchRecruitmentSubmission({
   });
   const reviewRow = createApplicationReviewRow(application.id);
 
-  await channel.send({ embeds, components: [reviewRow] });
+  await sendEmbedsInChunks(channel, embeds, [reviewRow]);
 
   if (config.channels?.applicationsLog) {
     const logChannel = await guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
     if (logChannel?.isTextBased()) {
-      await logChannel.send({ embeds, components: [reviewRow] });
+      await sendEmbedsInChunks(logChannel, embeds, [reviewRow]);
     }
   }
 
