@@ -18,7 +18,7 @@ module.exports = {
     welcome: "",
     rules: "",
     validation: "",
-    ticketPanel: "",
+    ticketPanel: "1485333822210834452",
     recruitmentPanel: "",
     farewellLog: "",
     applicationsLog: "",
@@ -79,6 +79,7 @@ module.exports = {
     ]
   },
   tickets: {
+    panelMessageId: "",
     types: {
       support: {
         label: "Support general",
