@@ -1,6 +1,9 @@
 const { createBaseEmbed } = require("../utils/embeds");
 const { ensureUserProfile } = require("../services/profileService");
 const { sendLog } = require("../services/logService");
+const { createLogger } = require("../utils/logger");
+
+const logger = createLogger("Welcome");
 
 function createWelcomeEmbed(member, config) {
   const title = config.messages?.welcomeTitle || "Bienvenue au sein de Societa Ombra";
@@ -41,7 +44,12 @@ async function handleMemberJoin(member, config) {
     const welcomeChannel = await member.guild.channels.fetch(config.channels.welcome).catch(() => null);
     if (welcomeChannel?.isTextBased()) {
       await welcomeChannel.send({ content: `${member}`, embeds: [embed] });
+      logger.info(`Welcome message sent for ${member.user.tag} in ${config.channels.welcome}`);
+    } else {
+      logger.warn(`Welcome channel ${config.channels?.welcome || "undefined"} is invalid or inaccessible.`);
     }
+  } else {
+    logger.warn("Welcome channel is not configured.");
   }
 
   if (config.messages?.welcomeDmEnabled) {
