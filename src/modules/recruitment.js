@@ -220,31 +220,21 @@ async function sendEmbedsInChunks(channel, embeds, components = []) {
   }
 }
 
-async function dispatchRecruitmentSubmission({
+async function injectRecruitmentSubmissionIntoChannel({
   guild,
-  member,
-  client,
+  channel,
   application,
+  ticketNumber,
+  typeLabel,
   answers,
   score,
-  sourceLabel
+  sourceLabel,
+  logChannelId
 }) {
-  const config = client.runtimeConfig;
-  const { existingTicket, existingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
-    guild,
-    config,
-    member.user,
-    "recruitment"
-  );
-
-  if (existingTicket) {
-    return { existingTicket, existingChannel };
-  }
-
   const embeds = createRecruitmentSubmissionEmbeds({
-    userMention: `${member}`,
+    userMention: `<@${application.userId}>`,
     ticketNumber,
-    typeLabel: typeConfig.label,
+    typeLabel,
     score,
     answers,
     sourceLabel
@@ -253,14 +243,75 @@ async function dispatchRecruitmentSubmission({
 
   await sendEmbedsInChunks(channel, embeds, [reviewRow]);
 
-  if (config.channels?.applicationsLog) {
-    const logChannel = await guild.channels.fetch(config.channels.applicationsLog).catch(() => null);
+  if (logChannelId) {
+    const logChannel = await guild.channels.fetch(logChannelId).catch(() => null);
     if (logChannel?.isTextBased()) {
       await sendEmbedsInChunks(logChannel, embeds, [reviewRow]);
     }
   }
 
-  return { channel, ticketNumber, typeConfig, embeds };
+  return { embeds };
+}
+
+async function dispatchRecruitmentSubmission({
+  guild,
+  member,
+  client,
+  application,
+  answers,
+  score,
+  sourceLabel,
+  forceIntoExisting = false,
+  existingTicketRecord = null,
+  existingChannel = null
+}) {
+  const config = client.runtimeConfig;
+  const { existingTicket, existingChannel: foundExistingChannel, ticketNumber, channel, typeConfig } = await createTicketChannel(
+    guild,
+    config,
+    member.user,
+    "recruitment"
+  );
+
+  if (existingTicket && !forceIntoExisting) {
+    return { existingTicket, existingChannel: foundExistingChannel };
+  }
+
+  if (existingTicket && forceIntoExisting && existingChannel) {
+    const injected = await injectRecruitmentSubmissionIntoChannel({
+      guild,
+      channel: existingChannel,
+      application,
+      ticketNumber: existingTicket.ticketNumber,
+      typeLabel: typeConfig.label,
+      answers,
+      score,
+      sourceLabel: `${sourceLabel} • Réinjection`,
+      logChannelId: config.channels?.applicationsLog
+    });
+
+    return {
+      channel: existingChannel,
+      ticketNumber: existingTicket.ticketNumber,
+      typeConfig,
+      embeds: injected.embeds,
+      reusedExisting: true
+    };
+  }
+
+  const injected = await injectRecruitmentSubmissionIntoChannel({
+    guild,
+    channel,
+    application,
+    ticketNumber,
+    typeLabel: typeConfig.label,
+    answers,
+    score,
+    sourceLabel,
+    logChannelId: config.channels?.applicationsLog
+  });
+
+  return { channel, ticketNumber, typeConfig, embeds: injected.embeds };
 }
 
 async function submitApplication(interaction, client) {
@@ -459,6 +510,7 @@ module.exports = {
   createRecruitmentTicketModal,
   createRecruitmentPortalPayload,
   dispatchRecruitmentSubmission,
+  injectRecruitmentSubmissionIntoChannel,
   submitApplication,
   submitRecruitmentTicketForm,
   reviewApplication,

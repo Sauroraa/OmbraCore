@@ -343,6 +343,16 @@ function renderRecruitmentPage({
               </div>
             </div>
           </form>
+          {ticket && ticket.status === 'open' ? (
+            <form action={submitUrl} method='POST' className='footer-actions'>
+              {Object.entries(draft).map(([key, value]) => <input key={'force-' + key} type='hidden' name={key} value={value} />)}
+              <input type='hidden' name='force_resend' value='1' />
+              <p>Un ticket recrutement existe déjà. Si tu as eu un problème d’envoi, tu peux forcer une seconde injection du dossier dans le ticket existant sans attendre une suppression manuelle.</p>
+              <div className='top-actions'>
+                <button type='submit' className='btn' disabled={!state.user || !rulesAccepted || recruitmentLocked}>Forcer l’envoi dans le ticket existant</button>
+              </div>
+            </form>
+          ) : null}
         </div>
       );
 

@@ -322,6 +322,7 @@ function registerRecruitmentRoutes(app, client) {
         throw new Error("Ta candidature a été refusée automatiquement pour âge IRL insuffisant. Aucun nouveau dépôt n'est autorisé.");
       }
 
+      const forceResend = String(req.body.force_resend || "").trim() === "1";
       const existingOpenTicket = await Ticket.findOne({
         guildId: guild.id,
         authorId: user.id,
@@ -330,7 +331,14 @@ function registerRecruitmentRoutes(app, client) {
       });
 
       if (existingOpenTicket) {
-        throw new Error("Tu as déjà un ticket recrutement ouvert.");
+        const existingChannel = await guild.channels.fetch(existingOpenTicket.channelId).catch(() => null);
+
+        if (!existingChannel) {
+          existingOpenTicket.status = "deleted";
+          await existingOpenTicket.save();
+        } else if (!forceResend) {
+          throw new Error("Tu as déjà un ticket recrutement ouvert.");
+        }
       }
 
       const missingField = FORM_DEFINITION.find((item) => !String(req.body[item.key] || "").trim());
@@ -415,7 +423,10 @@ function registerRecruitmentRoutes(app, client) {
         application,
         answers: allAnswers,
         score: quizScore,
-        sourceLabel: "Portail web"
+        sourceLabel: "Portail web",
+        forceIntoExisting: forceResend,
+        existingTicketRecord: existingOpenTicket || null,
+        existingChannel: existingOpenTicket ? await guild.channels.fetch(existingOpenTicket.channelId).catch(() => null) : null
       });
 
       if (existingTicket) {
