@@ -22,8 +22,8 @@ module.exports = {
           { name: "Haute", value: "high" }
         )
     )
-    .addBooleanOption((option) => option.setName("signature").setDescription("Afficher la signature anonyme"))
-    .addStringOption((option) => option.setName("message").setDescription("Message a transmettre").setRequired(true)),
+    .addStringOption((option) => option.setName("message").setDescription("Message a transmettre").setRequired(true))
+    .addBooleanOption((option) => option.setName("signature").setDescription("Afficher la signature anonyme")),
   async execute(interaction, client) {
     const { submitAnonymousMessage } = require("../../modules/anonymous");
     await submitAnonymousMessage(interaction, client);
