@@ -234,7 +234,7 @@ function renderRecruitmentPage({
               </div>
             </div>
             {state.error ? <div className='alert error'>{state.error}</div> : null}
-            {submitted ? <div className='alert success'>Votre dossier a été transmis avec succès et injecté dans le circuit interne.</div> : null}
+            {state.submitted ? <div className='alert success'>Votre dossier a été transmis avec succès et injecté dans le circuit interne.</div> : null}
             {view === 'home' && <HomeView />}
             {view === 'access' && <AccessView />}
             {view === 'dossier' && <DossierView />}
