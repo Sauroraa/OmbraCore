@@ -29,19 +29,25 @@ function createTicketPanel(config) {
   const options = Object.entries(config.tickets?.types || {}).map(([value, item]) => ({
     label: item.label,
     value,
-    description: `Ouvrir un ticket : ${item.label}`
+    description: `Canal prive pour ${item.label.toLowerCase()}`
   }));
 
   const embed = createBaseEmbed({
-    title: "Ouvrir un ticket",
-    description: "Choisis le type de demande pour creer un salon prive avec l'equipe concernee.",
-    color: 0x232323
+    title: "Cellule de contact securisee",
+    description:
+      "Selectionne la nature de ta demande pour ouvrir un canal prive, discret et traite par l'equipe concernee.\n\nChaque dossier est encadre, journalise et reserve aux personnes autorisees.",
+    fields: [
+      { name: "Traitement", value: "Prise en charge propre par le staff adapte.", inline: true },
+      { name: "Confidentialite", value: "Salon prive avec acces limite.", inline: true },
+      { name: "Cadre", value: "Structure claire, reponse rapide, suivi propre.", inline: true }
+    ],
+    color: 0x181818
   });
 
   const row = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId(TICKET_SELECT)
-      .setPlaceholder("Selectionne un type de ticket")
+      .setPlaceholder("Choisir un motif de prise de contact")
       .addOptions(options.slice(0, 25))
   );
 
