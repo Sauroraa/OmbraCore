@@ -11,6 +11,4 @@ COPY .env.production.example ./.env.production.example
 
 ENV NODE_ENV=production
 
-USER node
-
 CMD ["node", "src/index.js"]
